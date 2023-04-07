@@ -56,7 +56,7 @@ build-test-wasms: Cargo.lock
 	cargo build --package 'test_*' --profile test-wasms --target wasm32-unknown-unknown
 
 test: build-test-wasms
-	cargo test --workspace
+	cargo test
 
 e2e-test:
 	cargo test --test it -- --ignored

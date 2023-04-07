@@ -64,6 +64,7 @@ jobs:
     - run: cargo clippy --all-targets --target ${{ matrix.target }}
     - run: make build-test-wasms
     - run: cargo install --path ./cmd/soroban-cli --debug
+    - run: cargo test
     - if: startsWith(matrix.target, 'x86_64')
       # specify directories explicitly to avoid building the preflight library (otherwise it will fail with missing symbols)
       run: |
