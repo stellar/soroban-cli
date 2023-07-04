@@ -155,6 +155,10 @@ impl Contract {
         vec
     }
 
+    pub fn strukt_vec(_env: Env, strukt_vec: Vec<Test>) -> Vec<Test> {
+        strukt_vec
+    }
+
     pub fn tuple(_env: Env, tuple: (Symbol, u32)) -> (Symbol, u32) {
         tuple
     }

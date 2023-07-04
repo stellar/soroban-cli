@@ -93,6 +93,11 @@ fn vec_() {
 }
 
 #[test]
+fn strukt_vec() {
+    invoke_with_roundtrip("strukt_vec", json!([{"a": 42, "b": true, "c": "world"}]));
+}
+
+#[test]
 fn vec_help() {
     invoke(&TestEnv::default(), "vec")
         .arg("--help")

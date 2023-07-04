@@ -543,6 +543,19 @@ export async function vec({vec}: {vec: Array<u32>}, {signAndSend, fee}: {signAnd
     return scValStrToJs(response.xdr) as Array<u32>;
 }
 
+export async function strukt_vec({strukt_vec}: {strukt_vec: Array<Test>}, {signAndSend, fee}: {signAndSend?: boolean, fee?: number} = {signAndSend: false, fee: 100}): Promise<Array<Test>> {
+    let invokeArgs: InvokeArgs = {
+        signAndSend,
+        fee,
+        method: 'strukt_vec', 
+        args: [((i) => xdr.ScVal.scvVec(i.map(TestToXDR(i))))(strukt_vec)], 
+    };
+    
+    // @ts-ignore Type does exist
+    const response = await invoke(invokeArgs);
+    return scValStrToJs(response.xdr) as Array<Test>;
+}
+
 export async function tuple({tuple}: {tuple: [string, u32]}, {signAndSend, fee}: {signAndSend?: boolean, fee?: number} = {signAndSend: false, fee: 100}): Promise<[string, u32]> {
     let invokeArgs: InvokeArgs = {
         signAndSend,
