@@ -8,12 +8,57 @@ use soroban_cli::{
 };
 use soroban_test::TestEnv;
 
-use super::util::network_passphrase;
+use super::util::{network_passphrase, ROOT_ACCOUNT_RPC_TEST};
 
 #[tokio::test]
 #[ignore]
-async fn burn() {
+async fn xfer_and_burn() {
     let sandbox = &TestEnv::default();
+    let (address, id) = &deploy().await;
+    assert!(authorize(sandbox, id, address).await);
+    assert_eq!(
+        "\"9223372036854775807\"",
+        balance(sandbox, id, address).await,
+    );
+
+    println!(
+        "{}",
+        sandbox
+            .invoke(&[
+                "--id",
+                &id,
+                "--",
+                "xfer",
+                "--from",
+                address,
+                "--to",
+                ROOT_ACCOUNT_RPC_TEST,
+                "--amount=100"
+            ])
+            .await
+            .unwrap()
+    );
+
+    assert_eq!(
+        "\"9223372036854775707\"",
+        balance(sandbox, id, address).await,
+    );
+
+    println!(
+        "{}",
+        sandbox
+            .invoke(&["--id", id, "--", "burn", "--id", address, "--amount=100"])
+            .await
+            .unwrap()
+    );
+
+    assert_eq!(
+        "\"9223372036854775607\"",
+        balance(sandbox, id, address).await,
+    );
+}
+
+pub async fn deploy() -> (String, String) {
     let address = config::identity::address::Cmd::parse("--hd-path=0")
         .unwrap()
         .public_key()
@@ -27,53 +72,24 @@ async fn burn() {
         "CAMTHSPKXZJIRTUXQP5QWJIFH3XIDMKLFAWVQOFOXPTKAW5GKV37ZC4N",
         id
     );
-    assert_eq!(
-        "true",
-        sandbox
-            .invoke(&[
-                "--id",
-                &id,
-                "--",
-                "authorized",
-                "--id",
-                &address.to_string()
-            ])
-            .await
-            .unwrap()
-    );
-    assert_eq!(
-        "\"9223372036854775807\"",
-        sandbox
-            .invoke(&["--id", &id, "--", "balance", "--id", &address.to_string()])
-            .await
-            .unwrap(),
-    );
-
-    println!(
-        "{}",
-        sandbox
-            .invoke(&[
-                "--id",
-                &id,
-                "--",
-                "burn",
-                "--id",
-                &address.to_string(),
-                "--amount=100"
-            ])
-            .await
-            .unwrap()
-    );
-
-    assert_eq!(
-        "\"9223372036854775707\"",
-        sandbox
-            .invoke(&["--id", &id, "--", "balance", "--id", &address.to_string()])
-            .await
-            .unwrap(),
-    );
+    (address.to_string(), id)
 }
 
 fn wrap_cmd(asset: &str) -> wrap::Cmd {
     wrap::Cmd::parse_arg_vec(&[&format!("--asset={asset}")]).unwrap()
+}
+
+async fn authorize(sandbox: &TestEnv, id: &str, address: &str) -> bool {
+    sandbox
+        .invoke(&["--id", id, "--", "authorized", "--id", address])
+        .await
+        .unwrap()
+        == "true"
+}
+
+async fn balance(sandbox: &TestEnv, id: &str, address: &str) -> String {
+    sandbox
+        .invoke(&["--id", id, "--", "balance", "--id", address])
+        .await
+        .unwrap()
 }
