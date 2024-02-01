@@ -35,7 +35,7 @@ const (
 	friendbotURL                = "http://localhost:8000/friendbot"
 	// Needed when Core is run with ARTIFICIALLY_ACCELERATE_TIME_FOR_TESTING=true
 	checkpointFrequency    = 8
-	sorobanRPCPort         = 8000
+	sorobanRPCPort         = 8042
 	adminPort              = 8080
 	helloWorldContractPath = "../../../../target/wasm32-unknown-unknown/test-wasms/test_hello_world.wasm"
 )

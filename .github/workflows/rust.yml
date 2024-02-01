@@ -74,6 +74,13 @@ jobs:
       run: sudo apt-get update && sudo apt-get -y install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
     - run: cargo clippy --all-targets --target ${{ matrix.target }}
     - run: make build-test
+    - name: Enable Docker Remote API on Localhost
+      shell: bash
+      run: |
+          sudo mkdir -p /etc/systemd/system/docker.service.d/
+          sudo cp ./.github/docker.override.conf /etc/systemd/system/docker.service.d/override.conf
+          sudo systemctl daemon-reload
+          sudo systemctl restart docker
     - if: startsWith(matrix.target, 'x86_64')
       # specify directories explicitly to avoid building the preflight library (otherwise it will fail with missing symbols)
       run: |
