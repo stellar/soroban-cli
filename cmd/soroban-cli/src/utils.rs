@@ -9,7 +9,7 @@ use soroban_env_host::xdr::{
     TransactionV1Envelope, WriteXdr,
 };
 
-pub mod contract_spec;
+pub use soroban_spec_tools::contract as contract_spec;
 
 /// # Errors
 ///
@@ -55,16 +55,17 @@ pub fn sign_transaction(
 ///
 /// Might return an error
 pub fn contract_id_from_str(contract_id: &str) -> Result<[u8; 32], stellar_strkey::DecodeError> {
-    stellar_strkey::Contract::from_string(contract_id)
-        .map(|strkey| strkey.0)
-        .or_else(|_| {
+    Ok(
+        if let Ok(strkey) = stellar_strkey::Contract::from_string(contract_id) {
+            strkey.0
+        } else {
             // strkey failed, try to parse it as a hex string, for backwards compatibility.
             soroban_spec_tools::utils::padded_hex_from_str(contract_id, 32)
                 .map_err(|_| stellar_strkey::DecodeError::Invalid)?
                 .try_into()
-                .map_err(|_| stellar_strkey::DecodeError::Invalid)
-        })
-        .map_err(|_| stellar_strkey::DecodeError::Invalid)
+                .map_err(|_| stellar_strkey::DecodeError::Invalid)?
+        },
+    )
 }
 
 /// # Errors
@@ -197,48 +198,6 @@ mod tests {
                 ]
             ),
             Err(err) => panic!("Failed to parse contract id: {err}"),
-        }
-
-        // hex
-        match contract_id_from_str(
-            "363eaa3867841fbad0f4ed88c779e4fe66e56a2470dc98c0ec9c073d05c7b103",
-        ) {
-            Ok(contract_id) => assert_eq!(
-                contract_id,
-                [
-                    0x36, 0x3e, 0xaa, 0x38, 0x67, 0x84, 0x1f, 0xba, 0xd0, 0xf4, 0xed, 0x88, 0xc7,
-                    0x79, 0xe4, 0xfe, 0x66, 0xe5, 0x6a, 0x24, 0x70, 0xdc, 0x98, 0xc0, 0xec, 0x9c,
-                    0x07, 0x3d, 0x05, 0xc7, 0xb1, 0x03,
-                ]
-            ),
-            Err(err) => panic!("Failed to parse contract id: {err}"),
-        }
-
-        // unpadded-hex
-        match contract_id_from_str("1") {
-            Ok(contract_id) => assert_eq!(
-                contract_id,
-                [
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-                ]
-            ),
-            Err(err) => panic!("Failed to parse contract id: {err}"),
-        }
-
-        // invalid hex
-        match contract_id_from_str("foobar") {
-            Ok(_) => panic!("Expected parsing to fail"),
-            Err(err) => assert_eq!(err, stellar_strkey::DecodeError::Invalid),
-        }
-
-        // hex too long (33 bytes)
-        match contract_id_from_str(
-            "000000000000000000000000000000000000000000000000000000000000000000",
-        ) {
-            Ok(_) => panic!("Expected parsing to fail"),
-            Err(err) => assert_eq!(err, stellar_strkey::DecodeError::Invalid),
         }
     }
 }

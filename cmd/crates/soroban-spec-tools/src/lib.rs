@@ -13,6 +13,7 @@ use stellar_xdr::curr::{
     UInt128Parts, UInt256Parts, Uint256, VecM,
 };
 
+pub mod contract;
 pub mod utils;
 
 #[derive(thiserror::Error, Debug)]

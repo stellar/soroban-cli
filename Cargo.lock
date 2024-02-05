@@ -1943,7 +1943,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "futures-util",
- "http",
+ "http 0.2.11",
  "indexmap 2.1.0",
  "slab",
  "tokio",
@@ -2041,13 +2041,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "http"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b32afd38673a8016f7c9ae69e5af41a58f81b1d31689040f2f1959594ce194ea"
+dependencies = [
+ "bytes",
+ "fnv",
+ "itoa",
+]
+
+[[package]]
 name = "http-body"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ceab25649e9960c0311ea418d17bee82c0dcec1bd053b5f9a66e265a693bed2"
 dependencies = [
  "bytes",
- "http",
+ "http 0.2.11",
  "pin-project-lite",
 ]
 
@@ -2074,7 +2085,7 @@ dependencies = [
  "futures-core",
  "futures-util",
  "h2",
- "http",
+ "http 0.2.11",
  "http-body",
  "httparse",
  "httpdate",
@@ -2094,7 +2105,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec3efd23720e2049821a693cbc7e65ea87c72f1c58ff2f9522ff332b1491e590"
 dependencies = [
  "futures-util",
- "http",
+ "http 0.2.11",
  "hyper",
  "log",
  "rustls",
@@ -3050,7 +3061,7 @@ dependencies = [
  "futures-core",
  "futures-util",
  "h2",
- "http",
+ "http 0.2.11",
  "http-body",
  "hyper",
  "hyper-rustls",
@@ -3562,7 +3573,7 @@ dependencies = [
  "gix",
  "heck",
  "hex",
- "http",
+ "http 0.2.11",
  "hyper",
  "hyper-tls",
  "itertools 0.10.5",
@@ -3584,6 +3595,7 @@ dependencies = [
  "shlex",
  "soroban-env-host",
  "soroban-ledger-snapshot",
+ "soroban-rpc",
  "soroban-sdk",
  "soroban-spec",
  "soroban-spec-json",
@@ -3692,6 +3704,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "soroban-rpc"
+version = "20.2.0"
+dependencies = [
+ "base64 0.21.5",
+ "clap",
+ "ed25519-dalek 2.0.0",
+ "ethnum",
+ "hex",
+ "http 1.0.0",
+ "itertools 0.10.5",
+ "jsonrpsee-core",
+ "jsonrpsee-http-client",
+ "serde",
+ "serde-aux",
+ "serde_json",
+ "sha2 0.10.8",
+ "soroban-env-host",
+ "soroban-sdk",
+ "soroban-spec",
+ "soroban-spec-tools",
+ "stellar-strkey 0.0.7",
+ "stellar-xdr",
+ "termcolor",
+ "termcolor_output",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "wasmparser 0.90.0",
+ "which",
+]
+
+[[package]]
 name = "soroban-sdk"
 version = "20.3.0"
 source = "git+https://github.com/stellar/rs-soroban-sdk?rev=4aef54ff9295c2fca4c5b9fbd2c92d0ff99f67de#4aef54ff9295c2fca4c5b9fbd2c92d0ff99f67de"
@@ -3790,6 +3834,7 @@ dependencies = [
  "hex",
  "itertools 0.10.5",
  "serde_json",
+ "soroban-env-host",
  "soroban-spec",
  "stellar-strkey 0.0.7",
  "stellar-xdr",

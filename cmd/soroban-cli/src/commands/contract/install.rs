@@ -112,14 +112,10 @@ impl Cmd {
             build_install_contract_code_tx(contract, sequence + 1, self.fee.fee, &key)?;
 
         // Currently internal errors are not returned if the contract code is expired
-        if let (
-            TransactionResult {
-                result: TransactionResultResult::TxInternalError,
-                ..
-            },
-            _,
-            _,
-        ) = client
+        if let Some(TransactionResult {
+            result: TransactionResultResult::TxInternalError,
+            ..
+        }) = client
             .prepare_and_send_transaction(
                 &tx_without_preflight,
                 &key,
@@ -129,6 +125,8 @@ impl Cmd {
                 None,
             )
             .await?
+            .result
+            .as_ref()
         {
             // Now just need to restore it and don't have to install again
             restore::Cmd {
@@ -153,7 +151,7 @@ impl Cmd {
     }
 }
 
-fn get_contract_meta_sdk_version(wasm_spec: &utils::contract_spec::ContractSpec) -> Option<String> {
+fn get_contract_meta_sdk_version(wasm_spec: &soroban_spec_tools::contract::Spec) -> Option<String> {
     let rs_sdk_version_option = if let Some(_meta) = &wasm_spec.meta_base64 {
         wasm_spec.meta.iter().find(|entry| match entry {
             ScMetaEntry::ScMetaV0(ScMetaV0 { key, .. }) => {

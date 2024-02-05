@@ -35,7 +35,7 @@ fn current_env_not_overwritten() {
         write_env_file(e, &contract_id());
 
         e.new_assert_cmd("contract")
-            .env("SOROBAN_CONTRACT_ID", "2")
+            .env("SOROBAN_CONTRACT_ID", "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4")
             .arg("invoke")
             .arg("--")
             .arg("hello")
@@ -51,7 +51,10 @@ fn cli_args_have_priority() {
         deploy_hello(e);
         write_env_file(e, &contract_id());
         e.new_assert_cmd("contract")
-            .env("SOROBAN_CONTRACT_ID", "2")
+            .env(
+                "SOROBAN_CONTRACT_ID",
+                "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+            )
             .arg("invoke")
             .arg("--id")
             .arg(TEST_CONTRACT_ID)

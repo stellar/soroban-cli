@@ -1,5 +1,6 @@
 use clap::{command, Parser};
 use soroban_env_host::xdr;
+use soroban_spec_tools::contract;
 use std::{fmt::Debug, path::PathBuf};
 use tracing::debug;
 
@@ -28,7 +29,7 @@ pub enum Error {
     #[error(transparent)]
     Xdr(#[from] xdr::Error),
     #[error(transparent)]
-    Spec(#[from] crate::utils::contract_spec::Error),
+    Spec(#[from] contract::Error),
 }
 
 impl Cmd {

@@ -28,13 +28,8 @@ use super::super::{
     config::{self, locator},
     events,
 };
-use crate::{
-    commands::global,
-    rpc::{self, Client},
-    utils::{self, contract_spec},
-    Pwd,
-};
-use soroban_spec_tools::Spec;
+use crate::{commands::global, rpc, Pwd};
+use soroban_spec_tools::{contract, Spec};
 
 #[derive(Parser, Debug, Default, Clone)]
 #[allow(clippy::struct_excessive_bools)]
@@ -49,6 +44,9 @@ pub struct Cmd {
     /// Output the cost execution to stderr
     #[arg(long = "cost")]
     pub cost: bool,
+    /// Number of instructions to simulate
+    #[arg(long)]
+    pub instructions: Option<u32>,
     /// Function name as subcommand, then arguments for that function as `--arg-name value`
     #[arg(last = true, id = "CONTRACT_FN_AND_ARGS")]
     pub slop: Vec<OsString>,
@@ -140,7 +138,7 @@ pub enum Error {
     #[error(transparent)]
     StrKey(#[from] stellar_strkey::DecodeError),
     #[error(transparent)]
-    ContractSpec(#[from] contract_spec::Error),
+    ContractSpec(#[from] contract::Error),
     #[error("")]
     MissingFileArg(PathBuf),
 }
@@ -275,7 +273,7 @@ impl Cmd {
             // For testing wasm arg parsing
             let _ = self.build_host_function_parameters(contract_id, spec_entries)?;
         }
-        let client = Client::new(&network.rpc_url)?;
+        let client = rpc::Client::new(&network.rpc_url)?;
         client
             .verify_network_passphrase(Some(&network.network_passphrase))
             .await?;
@@ -299,29 +297,31 @@ impl Cmd {
             self.fee.fee,
             &key,
         )?;
-
-        let (result, meta, events) = client
-            .prepare_and_send_transaction(
-                &tx,
-                &key,
-                &signers,
-                &network.network_passphrase,
-                Some(log_events),
-                (global_args.verbose || global_args.very_verbose || self.cost)
-                    .then_some(log_resources),
+        let mut txn = client.create_assembled_transaction(&tx).await?;
+        if let Some(instructions) = self.instructions {
+            txn = txn.set_max_instructions(instructions);
+        }
+        let (return_value, events) = if txn.is_view() {
+            (
+                txn.sim_res().results()?[0].xdr.clone(),
+                txn.sim_res().events()?,
             )
-            .await?;
-
-        tracing::debug!(?result);
-        crate::log::diagnostic_events(&events, tracing::Level::INFO);
-        let xdr::TransactionMeta::V3(xdr::TransactionMetaV3 {
-            soroban_meta: Some(xdr::SorobanTransactionMeta { return_value, .. }),
-            ..
-        }) = meta
-        else {
-            return Err(Error::MissingOperationResult);
+        } else {
+            let res = client
+                .send_assembled_transaction(
+                    txn,
+                    &key,
+                    &signers,
+                    &network.network_passphrase,
+                    Some(log_events),
+                    (global_args.verbose || global_args.very_verbose || self.cost)
+                        .then_some(log_resources),
+                )
+                .await?;
+            (res.return_value()?, res.contract_events()?)
         };
 
+        crate::log::diagnostic_events(&events, tracing::Level::INFO);
         output_to_string(&spec, &return_value, &function)
     }
 
@@ -344,7 +344,7 @@ impl Cmd {
 
 impl Cmd {
     fn contract_id(&self) -> Result<[u8; 32], Error> {
-        utils::contract_id_from_str(&self.contract_id)
+        soroban_spec_tools::utils::contract_id_from_str(&self.contract_id)
             .map_err(|e| Error::CannotParseContractId(self.contract_id.clone(), e))
     }
 }

@@ -120,7 +120,7 @@ impl Cmd {
             let (
                 LedgerKey::ContractData(LedgerKeyContractData { key, .. }),
                 LedgerEntryData::ContractData(ContractDataEntry { val, .. }),
-            ) = (key, val)
+            ) = &(key, val)
             else {
                 return Err(Error::OnlyDataAllowed);
             };

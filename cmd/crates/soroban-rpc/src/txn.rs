@@ -2,16 +2,16 @@ use ed25519_dalek::Signer;
 use sha2::{Digest, Sha256};
 use soroban_env_host::xdr::{
     self, AccountId, DecoratedSignature, ExtensionPoint, Hash, HashIdPreimage,
-    HashIdPreimageSorobanAuthorization, InvokeHostFunctionOp, Limits, Memo, Operation,
-    OperationBody, Preconditions, PublicKey, ReadXdr, RestoreFootprintOp, ScAddress, ScMap,
-    ScSymbol, ScVal, Signature, SignatureHint, SorobanAddressCredentials,
+    HashIdPreimageSorobanAuthorization, InvokeHostFunctionOp, LedgerFootprint, Limits, Memo,
+    Operation, OperationBody, Preconditions, PublicKey, ReadXdr, RestoreFootprintOp, ScAddress,
+    ScMap, ScSymbol, ScVal, Signature, SignatureHint, SorobanAddressCredentials,
     SorobanAuthorizationEntry, SorobanAuthorizedFunction, SorobanCredentials, SorobanResources,
     SorobanTransactionData, Transaction, TransactionEnvelope, TransactionExt,
     TransactionSignaturePayload, TransactionSignaturePayloadTaggedTransaction,
     TransactionV1Envelope, Uint256, VecM, WriteXdr,
 };
 
-use crate::rpc::{Client, Error, RestorePreamble, SimulateTransactionResponse};
+use super::{Client, Error, RestorePreamble, SimulateTransactionResponse};
 
 use super::{LogEvents, LogResources};
 
@@ -20,13 +20,35 @@ pub struct Assembled {
     sim_res: SimulateTransactionResponse,
 }
 
+/// Represents an assembled transaction ready to be signed and submitted to the network.
 impl Assembled {
+    ///
+    /// Creates a new `Assembled` transaction.
+    ///
+    /// # Arguments
+    ///
+    /// * `txn` - The original transaction.
+    /// * `client` - The client used for simulation and submission.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if simulation fails or if assembling the transaction fails.
     pub async fn new(txn: &Transaction, client: &Client) -> Result<Self, Error> {
         let sim_res = Self::simulate(txn, client).await?;
         let txn = assemble(txn, &sim_res)?;
         Ok(Self { txn, sim_res })
     }
 
+    ///
+    /// Calculates the hash of the assembled transaction.
+    ///
+    /// # Arguments
+    ///
+    /// * `network_passphrase` - The network passphrase.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if generating the hash fails.
     pub fn hash(&self, network_passphrase: &str) -> Result<[u8; 32], xdr::Error> {
         let signature_payload = TransactionSignaturePayload {
             network_id: Hash(Sha256::digest(network_passphrase).into()),
@@ -35,6 +57,17 @@ impl Assembled {
         Ok(Sha256::digest(signature_payload.to_xdr(Limits::none())?).into())
     }
 
+    ///
+    /// Signs the assembled transaction.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The signing key.
+    /// * `network_passphrase` - The network passphrase.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if signing the transaction fails.
     pub fn sign(
         self,
         key: &ed25519_dalek::SigningKey,
@@ -55,6 +88,17 @@ impl Assembled {
         }))
     }
 
+    ///
+    /// Simulates the assembled transaction.
+    ///
+    /// # Arguments
+    ///
+    /// * `tx` - The original transaction.
+    /// * `client` - The client used for simulation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if simulation fails.
     pub async fn simulate(
         tx: &Transaction,
         client: &Client,
@@ -67,6 +111,18 @@ impl Assembled {
             .await
     }
 
+    ///
+    /// Handles the restore process for the assembled transaction.
+    ///
+    /// # Arguments
+    ///
+    /// * `client` - The client used for submission.
+    /// * `source_key` - The signing key of the source account.
+    /// * `network_passphrase` - The network passphrase.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the restore process fails.
     pub async fn handle_restore(
         self,
         client: &Client,
@@ -88,14 +144,18 @@ impl Assembled {
         }
     }
 
+    /// Returns a reference to the original transaction.
     pub fn txn(&self) -> &Transaction {
         &self.txn
     }
 
+    /// Returns a reference to the simulation response.
     pub fn sim_res(&self) -> &SimulateTransactionResponse {
         &self.sim_res
     }
 
+    ///
+    /// # Errors
     pub async fn authorize(
         self,
         client: &Client,
@@ -117,11 +177,14 @@ impl Assembled {
         }
     }
 
+    #[must_use]
     pub fn bump_seq_num(mut self) -> Self {
         self.txn.seq_num.0 += 1;
         self
     }
 
+    ///
+    /// # Errors
     pub fn auth(&self) -> VecM<SorobanAuthorizationEntry> {
         self.txn
             .operations
@@ -137,6 +200,8 @@ impl Assembled {
             .unwrap_or_default()
     }
 
+    ///
+    /// # Errors
     pub fn log(
         &self,
         log_events: Option<LogEvents>,
@@ -156,10 +221,50 @@ impl Assembled {
         }
         Ok(())
     }
+
+    pub fn requires_auth(&self) -> bool {
+        requires_auth(&self.txn).is_some()
+    }
+
+    pub fn is_view(&self) -> bool {
+        if let TransactionExt::V1(SorobanTransactionData {
+            resources:
+                SorobanResources {
+                    footprint: LedgerFootprint { read_write, .. },
+                    ..
+                },
+            ..
+        }) = &self.txn.ext
+        {
+            if read_write.is_empty() {
+                return true;
+            }
+        }
+        false
+    }
+
+    #[must_use]
+    pub fn set_max_instructions(mut self, instructions: u32) -> Self {
+        if let TransactionExt::V1(SorobanTransactionData {
+            resources:
+                SorobanResources {
+                    instructions: ref mut i,
+                    ..
+                },
+            ..
+        }) = &mut self.txn.ext
+        {
+            tracing::trace!("setting max instructions to {instructions} from {i}");
+            *i = instructions;
+        }
+        self
+    }
 }
 
 // Apply the result of a simulateTransaction onto a transaction envelope, preparing it for
 // submission to the network.
+///
+/// # Errors
 pub fn assemble(
     raw: &Transaction,
     simulation: &SimulateTransactionResponse,
@@ -206,7 +311,7 @@ pub fn assemble(
     }
 
     // update the fees of the actual transaction to meet the minimum resource fees.
-    let classic_transaction_fees = crate::fee::Args::default().fee;
+    let classic_transaction_fees = 100;
     // Pad the fees up by 15% for a bit of wiggle room.
     tx.fee = (tx.fee.max(
         classic_transaction_fees
@@ -220,6 +325,21 @@ pub fn assemble(
     Ok(tx)
 }
 
+fn requires_auth(txn: &Transaction) -> Option<xdr::Operation> {
+    let [op @ Operation {
+        body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp { auth, .. }),
+        ..
+    }] = txn.operations.as_slice()
+    else {
+        return None;
+    };
+    matches!(
+        auth.first().map(|x| &x.root_invocation.function),
+        Some(&SorobanAuthorizedFunction::ContractFn(_))
+    )
+    .then(move || op.clone())
+}
+
 // Use the given source_key and signers, to sign all SorobanAuthorizationEntry's in the given
 // transaction. If unable to sign, return an error.
 fn sign_soroban_authorizations(
@@ -230,18 +350,8 @@ fn sign_soroban_authorizations(
     network_passphrase: &str,
 ) -> Result<Option<Transaction>, Error> {
     let mut tx = raw.clone();
-    let mut op = match tx.operations.as_slice() {
-        [op @ Operation {
-            body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp { auth, .. }),
-            ..
-        }] if matches!(
-            auth.first().map(|x| &x.root_invocation.function),
-            Some(&SorobanAuthorizedFunction::ContractFn(_))
-        ) =>
-        {
-            op.clone()
-        }
-        _ => return Ok(None),
+    let Some(mut op) = requires_auth(&tx) else {
+        return Ok(None);
     };
 
     let Operation {
@@ -378,6 +488,8 @@ fn sign_soroban_authorization_entry(
     Ok(auth)
 }
 
+///
+/// # Errors
 pub fn restore(parent: &Transaction, restore: &RestorePreamble) -> Result<Transaction, Error> {
     let transaction_data =
         SorobanTransactionData::from_xdr_base64(&restore.transaction_data, Limits::none())?;
@@ -398,8 +510,7 @@ pub fn restore(parent: &Transaction, restore: &RestorePreamble) -> Result<Transa
                 ext: ExtensionPoint::V0,
             }),
         }]
-        .try_into()
-        .unwrap(),
+        .try_into()?,
         ext: TransactionExt::V1(transaction_data),
     })
 }

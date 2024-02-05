@@ -1,11 +1,11 @@
 use soroban_cli::commands::contract;
 use soroban_test::TestEnv;
 
-use crate::util::{invoke_custom as invoke, CUSTOM_TYPES};
+use crate::util::{invoke_custom as invoke, CUSTOM_TYPES, DEFAULT_CONTRACT_ID};
 
 async fn invoke_custom(func: &str, args: &str) -> Result<String, contract::invoke::Error> {
     let e = &TestEnv::default();
-    invoke(e, "1", func, args, &CUSTOM_TYPES.path()).await
+    invoke(e, DEFAULT_CONTRACT_ID, func, args, &CUSTOM_TYPES.path()).await
 }
 
 #[tokio::test]
