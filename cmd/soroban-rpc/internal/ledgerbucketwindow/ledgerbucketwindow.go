@@ -24,10 +24,14 @@ type LedgerBucket[T any] struct {
 // an incoming event in memory. The value was calculated to align with (roughly) 24 hours window.
 const DefaultEventLedgerRetentionWindow = 17280
 
+// DefaultLedgerRetentionWindow represents default number of ledgers we would like to keep for events and transactions.
+// The value was calculated to align with (roughly) 24 hours window.
+const DefaultLedgerRetentionWindow = 17280
+
 // NewLedgerBucketWindow creates a new LedgerBucketWindow
 func NewLedgerBucketWindow[T any](retentionWindow uint32) *LedgerBucketWindow[T] {
 	if retentionWindow == 0 {
-		retentionWindow = DefaultEventLedgerRetentionWindow
+		retentionWindow = DefaultLedgerRetentionWindow
 	}
 	return &LedgerBucketWindow[T]{
 		buckets: make([]LedgerBucket[T], 0, retentionWindow),

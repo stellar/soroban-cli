@@ -39,6 +39,7 @@ type Config struct {
 	PreflightEnableDebug                        bool
 	SQLiteDBPath                                string
 	TransactionLedgerRetentionWindow            uint32
+	LedgerRetentionWindow                       uint32
 	RequestBacklogGlobalQueueLimit              uint
 	RequestBacklogGetHealthQueueLimit           uint
 	RequestBacklogGetEventsQueueLimit           uint

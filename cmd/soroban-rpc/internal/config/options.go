@@ -225,6 +225,16 @@ func (cfg *Config) options() ConfigOptions {
 			DefaultValue: uint32(1440),
 			Validate:     positive,
 		},
+
+		{
+			Name: "ledger-retention-window",
+			Usage: "configures the common retention window for events and transactions expressed in number of ledgers," +
+				" the default value is 17280 which corresponds to about 24 hours of history",
+			ConfigKey:    &cfg.LedgerRetentionWindow,
+			DefaultValue: uint32(ledgerbucketwindow.DefaultLedgerRetentionWindow),
+			Validate:     positive,
+		},
+
 		{
 			Name:         "max-events-limit",
 			Usage:        "Maximum amount of events allowed in a single getEvents response",

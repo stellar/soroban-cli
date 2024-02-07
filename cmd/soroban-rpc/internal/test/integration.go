@@ -143,6 +143,7 @@ func (i *Test) launchDaemon(coreBinaryPath string) {
 	config.SQLiteDBPath = path.Join(i.t.TempDir(), "soroban_rpc.sqlite")
 	config.IngestionTimeout = 10 * time.Minute
 	config.EventLedgerRetentionWindow = ledgerbucketwindow.DefaultEventLedgerRetentionWindow
+	config.LedgerRetentionWindow = ledgerbucketwindow.DefaultLedgerRetentionWindow
 	config.CheckpointFrequency = checkpointFrequency
 	config.MaxHealthyLedgerLatency = time.Second * 10
 	config.PreflightEnableDebug = true

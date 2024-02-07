@@ -175,12 +175,12 @@ func MustNew(cfg *config.Config) *Daemon {
 	eventStore := events.NewMemoryStore(
 		daemon,
 		cfg.NetworkPassphrase,
-		cfg.EventLedgerRetentionWindow,
+		cfg.LedgerRetentionWindow,
 	)
 	transactionStore := transactions.NewMemoryStore(
 		daemon,
 		cfg.NetworkPassphrase,
-		cfg.TransactionLedgerRetentionWindow,
+		cfg.LedgerRetentionWindow,
 	)
 
 	// initialize the stores using what was on the DB
