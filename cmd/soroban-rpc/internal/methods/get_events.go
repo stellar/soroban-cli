@@ -296,7 +296,7 @@ type PaginationOptions struct {
 
 type GetEventsResponse struct {
 	Events       []EventInfo `json:"events"`
-	LatestLedger int64       `json:"latestLedger"`
+	LatestLedger uint32      `json:"latestLedger"`
 }
 
 type eventScanner interface {
@@ -373,7 +373,7 @@ func (h eventsRPCHandler) getEvents(request GetEventsRequest) (GetEventsResponse
 		results = append(results, info)
 	}
 	return GetEventsResponse{
-		LatestLedger: int64(latestLedger),
+		LatestLedger: latestLedger,
 		Events:       results,
 	}, nil
 }

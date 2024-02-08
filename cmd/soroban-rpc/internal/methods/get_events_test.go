@@ -669,7 +669,7 @@ func TestGetEvents(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, int64(1), results.LatestLedger)
+		assert.Equal(t, uint32(1), results.LatestLedger)
 
 		expectedIds := []string{
 			events.Cursor{Ledger: 1, Tx: 1, Op: 0, Event: 0}.String(),
