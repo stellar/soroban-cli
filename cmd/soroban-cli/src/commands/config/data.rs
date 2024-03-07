@@ -66,17 +66,18 @@ pub fn list_ulids() -> Result<Vec<ulid::Ulid>, Error> {
     list.sort();
     Ok(list
         .iter()
-        .map(|s|ulid::Ulid::from_str(s))
+        .map(|s| ulid::Ulid::from_str(s))
         .collect::<Result<Vec<_>, _>>()?)
 }
 
 pub fn list_actions() -> Result<Vec<(ulid::Ulid, Action, Uri)>, Error> {
-    list_ulids()?.into_iter()
+    list_ulids()?
+        .into_iter()
         .map(|id| {
             let (action, uri) = read(&id)?;
             Ok((id, action, uri))
         })
-        .collect::<Result<Vec<_>,Error>>()
+        .collect::<Result<Vec<_>, Error>>()
 }
 
 #[derive(Serialize, Deserialize)]

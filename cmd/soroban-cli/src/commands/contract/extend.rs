@@ -9,7 +9,10 @@ use soroban_env_host::xdr::{
 };
 
 use crate::{
-    commands::{config, global, NetworkRunnable},
+    commands::{
+        config::{self, data},
+        global, network, NetworkRunnable,
+    },
     key,
     rpc::{self, Client},
     wasm, Pwd,
@@ -75,6 +78,10 @@ pub enum Error {
     Wasm(#[from] wasm::Error),
     #[error(transparent)]
     Key(#[from] key::Error),
+    #[error(transparent)]
+    Data(#[from] data::Error),
+    #[error(transparent)]
+    Network(#[from] network::Error),
 }
 
 impl Cmd {
@@ -158,6 +165,7 @@ impl NetworkRunnable for Cmd {
         let res = client
             .prepare_and_send_transaction(&tx, &key, &[], &network.network_passphrase, None, None)
             .await?;
+        data::write(res.clone().try_into()?, network.rpc_uri()?)?;
 
         let events = res.events()?;
         if !events.is_empty() {

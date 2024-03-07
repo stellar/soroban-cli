@@ -12,7 +12,10 @@ use std::convert::Infallible;
 use std::{array::TryFromSliceError, fmt::Debug, num::ParseIntError};
 
 use crate::{
-    commands::{config, global, NetworkRunnable},
+    commands::{
+        config::{self, data},
+        global, network, NetworkRunnable,
+    },
     rpc::{Client, Error as SorobanRpcError},
     utils::{contract_id_hash_from_asset, parsing::parse_asset},
 };
@@ -35,6 +38,10 @@ pub enum Error {
     Config(#[from] config::Error),
     #[error(transparent)]
     ParseAssetError(#[from] crate::utils::parsing::Error),
+    #[error(transparent)]
+    Data(#[from] data::Error),
+    #[error(transparent)]
+    Network(#[from] network::Error),
 }
 
 impl From<Infallible> for Error {
@@ -103,9 +110,13 @@ impl NetworkRunnable for Cmd {
         )?;
         let txn = client.create_assembled_transaction(&tx).await?;
         let txn = self.fee.apply_to_assembled_txn(txn);
-        client
-            .send_assembled_transaction(txn, &key, &[], network_passphrase, None, None)
-            .await?;
+        data::write(
+            client
+                .send_assembled_transaction(txn, &key, &[], network_passphrase, None, None)
+                .await?
+                .try_into()?,
+            network.rpc_uri()?,
+        )?;
 
         Ok(stellar_strkey::Contract(contract_id.0).to_string())
     }

@@ -15,8 +15,9 @@ use soroban_env_host::{
 };
 
 use crate::commands::{
+    config::data,
     contract::{self, id::wasm::get_contract_id},
-    global, NetworkRunnable,
+    global, network, NetworkRunnable,
 };
 use crate::{
     commands::{config, contract::install, HEADING_RPC},
@@ -91,6 +92,10 @@ pub enum Error {
     Infallible(#[from] std::convert::Infallible),
     #[error(transparent)]
     WasmId(#[from] contract::id::wasm::Error),
+    #[error(transparent)]
+    Data(#[from] data::Error),
+    #[error(transparent)]
+    Network(#[from] network::Error),
 }
 
 impl Cmd {
@@ -166,9 +171,14 @@ impl NetworkRunnable for Cmd {
         )?;
         let txn = client.create_assembled_transaction(&txn).await?;
         let txn = self.fee.apply_to_assembled_txn(txn);
-        client
-            .send_assembled_transaction(txn, &key, &[], &network.network_passphrase, None, None)
-            .await?;
+        data::write(
+            client
+                .send_assembled_transaction(txn, &key, &[], &network.network_passphrase, None, None)
+                .await?
+                .try_into()
+                .unwrap(),
+            network.rpc_uri()?,
+        )?;
         Ok(stellar_strkey::Contract(contract_id.0).to_string())
     }
 }

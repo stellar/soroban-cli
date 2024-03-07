@@ -29,7 +29,10 @@ use super::super::{
     events,
 };
 use crate::commands::NetworkRunnable;
-use crate::{commands::{global, config::data, network}, rpc, Pwd};
+use crate::{
+    commands::{config::data, global, network},
+    rpc, Pwd,
+};
 use soroban_spec_tools::{contract, Spec};
 
 #[derive(Parser, Debug, Default, Clone)]
@@ -345,11 +348,7 @@ impl NetworkRunnable for Cmd {
         let sim_res = txn.sim_response();
         data::write(sim_res.clone().into(), network.rpc_uri()?)?;
         let (return_value, events) = if self.is_view() {
-            (
-                sim_res.results()?[0].xdr.clone(),
-                sim_res.events()?,
-                
-            )
+            (sim_res.results()?[0].xdr.clone(), sim_res.events()?)
         } else {
             let global::Args {
                 verbose,
