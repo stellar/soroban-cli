@@ -6,6 +6,7 @@ use clap::{command, error::ErrorKind, CommandFactory, FromArgMatches, Parser};
 pub mod completion;
 pub mod config;
 pub mod contract;
+pub mod data;
 pub mod events;
 pub mod global;
 pub mod keys;

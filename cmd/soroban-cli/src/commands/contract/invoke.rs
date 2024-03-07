@@ -29,7 +29,7 @@ use super::super::{
     events,
 };
 use crate::commands::NetworkRunnable;
-use crate::{commands::global, rpc, Pwd};
+use crate::{commands::{global, config::data, network}, rpc, Pwd};
 use soroban_spec_tools::{contract, Spec};
 
 #[derive(Parser, Debug, Default, Clone)]
@@ -139,6 +139,12 @@ pub enum Error {
     ContractSpec(#[from] contract::Error),
     #[error("")]
     MissingFileArg(PathBuf),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Data(#[from] data::Error),
+    #[error(transparent)]
+    Network(#[from] network::Error),
 }
 
 impl From<Infallible> for Error {
@@ -336,10 +342,13 @@ impl NetworkRunnable for Cmd {
         )?;
         let txn = client.create_assembled_transaction(&tx).await?;
         let txn = self.fee.apply_to_assembled_txn(txn);
+        let sim_res = txn.sim_response();
+        data::write(sim_res.clone().into(), network.rpc_uri()?)?;
         let (return_value, events) = if self.is_view() {
             (
-                txn.sim_response().results()?[0].xdr.clone(),
-                txn.sim_response().events()?,
+                sim_res.results()?[0].xdr.clone(),
+                sim_res.events()?,
+                
             )
         } else {
             let global::Args {
@@ -357,6 +366,7 @@ impl NetworkRunnable for Cmd {
                     (verbose || very_verbose || self.fee.cost).then_some(log_resources),
                 )
                 .await?;
+            data::write(res.clone().try_into()?, network.rpc_uri()?)?;
             (res.return_value()?, res.contract_events()?)
         };
 

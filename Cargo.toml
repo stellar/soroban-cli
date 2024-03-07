@@ -70,7 +70,8 @@ path = "cmd/soroban-cli"
 
 [workspace.dependencies.soroban-rpc]
 version = "=20.3.3"
-# git = "https://github.com/stellar/soroban-rpc"
+git = "https://github.com/stellar/soroban-rpc"
+rev = "e84d0154d8ad416d64ac3a2c16d81f962595b5ea"
 
 [workspace.dependencies.stellar-xdr]
 version = "=20.1.0"
@@ -103,6 +104,8 @@ tracing-subscriber = "0.3.16"
 tracing-appender = "0.2.2"
 which = "4.4.0"
 wasmparser = "0.90.0"
+directories = "5.0.1"
+ulid = { version = "1.1" }
 termcolor = "1.1.3"
 termcolor_output = "1.0.1"
 ed25519-dalek = "2.0.0"
