@@ -119,7 +119,7 @@ impl NetworkRunnable for Cmd {
 
     async fn run_against_rpc_server(
         &self,
-        _: Option<&global::Args>,
+        args: Option<&global::Args>,
         config: Option<&config::Args>,
     ) -> Result<u32, Error> {
         let config = config.unwrap_or(&self.config);
@@ -166,7 +166,9 @@ impl NetworkRunnable for Cmd {
         let res = client
             .prepare_and_send_transaction(&tx, &key, &[], &network.network_passphrase, None, None)
             .await?;
-        data::write(res.clone().try_into()?, network.rpc_uri()?)?;
+        if args.map_or(true, |a| !a.no_cache) {
+            data::write(res.clone().try_into()?, network.rpc_uri()?)?;
+        }
         let meta = res
             .result_meta
             .as_ref()

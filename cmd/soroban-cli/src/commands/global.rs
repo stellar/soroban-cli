@@ -29,6 +29,10 @@ pub struct Args {
     /// List installed plugins. E.g. `soroban-hello`
     #[arg(long)]
     pub list: bool,
+
+    /// Do not cache your simulations and transactions
+    #[arg(long, env = "SOROBAN_NO_CACHE")]
+    pub no_cache: bool,
 }
 
 #[derive(thiserror::Error, Debug)]

@@ -171,14 +171,13 @@ impl NetworkRunnable for Cmd {
         )?;
         let txn = client.create_assembled_transaction(&txn).await?;
         let txn = self.fee.apply_to_assembled_txn(txn);
-        data::write(
-            client
-                .send_assembled_transaction(txn, &key, &[], &network.network_passphrase, None, None)
-                .await?
-                .try_into()
-                .unwrap(),
-            network.rpc_uri()?,
-        )?;
+        let get_txn_resp = client
+            .send_assembled_transaction(txn, &key, &[], &network.network_passphrase, None, None)
+            .await?
+            .try_into()?;
+        if global_args.map_or(true, |a| !a.no_cache) {
+            data::write(get_txn_resp, network.rpc_uri()?)?;
+        }
         Ok(stellar_strkey::Contract(contract_id.0).to_string())
     }
 }
