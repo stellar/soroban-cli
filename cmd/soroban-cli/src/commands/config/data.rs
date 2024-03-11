@@ -18,6 +18,8 @@ pub enum Error {
     Http(#[from] http::uri::InvalidUri),
     #[error(transparent)]
     Ulid(#[from] ulid::DecodeError),
+    #[error(transparent)]
+    Xdr(#[from] xdr::Error),
 }
 
 pub const XDG_DATA_HOME: &str = "XDG_DATA_HOME";
@@ -37,6 +39,12 @@ pub fn actions_dir() -> Result<std::path::PathBuf, Error> {
     Ok(dir)
 }
 
+pub fn spec_dir() -> Result<std::path::PathBuf, Error> {
+    let dir = project_dir()?.data_local_dir().join("spec");
+    std::fs::create_dir_all(&dir)?;
+    Ok(dir)
+}
+
 pub fn write(action: Action, rpc_url: Uri) -> Result<ulid::Ulid, Error> {
     let data = Data {
         action,
@@ -52,6 +60,23 @@ pub fn read(id: &ulid::Ulid) -> Result<(Action, Uri), Error> {
     let file = actions_dir()?.join(id.to_string()).with_extension("json");
     let data: Data = serde_json::from_str(&std::fs::read_to_string(file)?)?;
     Ok((data.action, http::Uri::from_str(&data.rpc_url)?))
+}
+
+pub fn write_spec(hash: &str, spec_entries: &[xdr::ScSpecEntry]) -> Result<(), Error> {
+    let file = spec_dir()?.join(hash);
+    tracing::trace!("writing spec to {:?}", file);
+    let mut contents: Vec<u8> = Vec::new();
+    for entry in spec_entries {
+        contents.extend(entry.to_xdr(xdr::Limits::none())?);
+    }
+    std::fs::write(file, contents)?;
+    Ok(())
+}
+
+pub fn read_spec(hash: &str) -> Result<Vec<xdr::ScSpecEntry>, Error> {
+    let file = spec_dir()?.join(hash);
+    tracing::trace!("reading spec from {:?}", file);
+    Ok(soroban_spec::read::parse_raw(&std::fs::read(file)?)?)
 }
 
 pub fn list_ulids() -> Result<Vec<ulid::Ulid>, Error> {

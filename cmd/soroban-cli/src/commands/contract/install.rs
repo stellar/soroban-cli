@@ -165,7 +165,9 @@ impl NetworkRunnable for Cmd {
             .run_against_rpc_server(args, None)
             .await?;
         }
-
+        if args.map_or(true, |a| !a.no_cache) {
+            data::write_spec(&hash.to_string(), &wasm_spec.spec)?;
+        }
         Ok(hash)
     }
 }

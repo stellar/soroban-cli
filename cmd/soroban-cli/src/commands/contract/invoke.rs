@@ -12,11 +12,11 @@ use heck::ToKebabCase;
 
 use soroban_env_host::{
     xdr::{
-        self, Error as XdrError, Hash, HostFunction, InvokeContractArgs, InvokeHostFunctionOp,
-        LedgerEntryData, LedgerFootprint, Memo, MuxedAccount, Operation, OperationBody,
-        Preconditions, ScAddress, ScSpecEntry, ScSpecFunctionV0, ScSpecTypeDef, ScVal, ScVec,
-        SequenceNumber, SorobanAuthorizationEntry, SorobanResources, Transaction, TransactionExt,
-        Uint256, VecM,
+        self, ContractDataEntry, Error as XdrError, Hash, HostFunction, InvokeContractArgs,
+        InvokeHostFunctionOp, LedgerEntryData, LedgerFootprint, Memo, MuxedAccount, Operation,
+        OperationBody, Preconditions, ScAddress, ScSpecEntry, ScSpecFunctionV0, ScSpecTypeDef,
+        ScVal, ScVec, SequenceNumber, SorobanAuthorizationEntry, SorobanResources, Transaction,
+        TransactionExt, Uint256, VecM,
     },
     HostError,
 };
@@ -331,8 +331,29 @@ impl NetworkRunnable for Cmd {
         let account_details = client.get_account(&public_strkey).await?;
         let sequence: i64 = account_details.seq_num.into();
 
+        let ContractDataEntry {
+            val:
+                xdr::ScVal::ContractInstance(xdr::ScContractInstance {
+                    executable: xdr::ContractExecutable::Wasm(hash),
+                    ..
+                }),
+            ..
+        } = client.get_contract_data(&contract_id).await?
+        else {
+            return Err(Error::MissingResult);
+        };
+        let hash = hash.to_string();
+
         // Get the contract
-        let spec_entries = client.get_remote_contract_spec(&contract_id).await?;
+        let spec_entries = if let Ok(entries) = data::read_spec(&hash) {
+            entries
+        } else {
+            let res = client.get_remote_contract_spec(&contract_id).await?;
+            if global_args.map_or(true, |a| !a.no_cache) {
+                data::write_spec(&hash, &res)?;
+            }
+            res
+        };
 
         // Get the ledger footprint
         let (function, spec, host_function_params, signers) =
