@@ -368,7 +368,7 @@ impl NetworkRunnable for Cmd {
         let txn = self.fee.apply_to_assembled_txn(txn);
         let sim_res = txn.sim_response();
         if global_args.map_or(true, |a| !a.no_cache) {
-            data::write(sim_res.clone().into(), network.rpc_uri()?)?;
+            data::write(sim_res.clone().into(), &network.rpc_uri()?)?;
         }
         let (return_value, events) = if self.is_view() {
             (sim_res.results()?[0].xdr.clone(), sim_res.events()?)
@@ -390,7 +390,7 @@ impl NetworkRunnable for Cmd {
                 )
                 .await?;
             if !no_cache {
-                data::write(res.clone().try_into()?, network.rpc_uri()?)?;
+                data::write(res.clone().try_into()?, &network.rpc_uri()?)?;
             }
             (res.return_value()?, res.contract_events()?)
         };

@@ -139,7 +139,7 @@ impl NetworkRunnable for Cmd {
             .send_assembled_transaction(txn, &key, &[], &network.network_passphrase, None, None)
             .await?;
         if args.map_or(true, |a| !a.no_cache) {
-            data::write(txn_resp.clone().try_into().unwrap(), network.rpc_uri()?)?;
+            data::write(txn_resp.clone().try_into().unwrap(), &network.rpc_uri()?)?;
         }
         // Currently internal errors are not returned if the contract code is expired
         if let Some(TransactionResult {

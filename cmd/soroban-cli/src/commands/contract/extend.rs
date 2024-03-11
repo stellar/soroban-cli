@@ -166,7 +166,7 @@ impl NetworkRunnable for Cmd {
             .prepare_and_send_transaction(&tx, &key, &[], &network.network_passphrase, None, None)
             .await?;
         if args.map_or(true, |a| !a.no_cache) {
-            data::write(res.clone().try_into()?, network.rpc_uri()?)?;
+            data::write(res.clone().try_into()?, &network.rpc_uri()?)?;
         }
 
         let events = res.events()?;

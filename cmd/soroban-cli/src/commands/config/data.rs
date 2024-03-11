@@ -45,7 +45,7 @@ pub fn spec_dir() -> Result<std::path::PathBuf, Error> {
     Ok(dir)
 }
 
-pub fn write(action: Action, rpc_url: Uri) -> Result<ulid::Ulid, Error> {
+pub fn write(action: Action, rpc_url: &Uri) -> Result<ulid::Ulid, Error> {
     let data = Data {
         action,
         rpc_url: rpc_url.to_string(),
@@ -128,14 +128,14 @@ impl TryFrom<GetTransactionResponse> for Action {
     fn try_from(res: GetTransactionResponse) -> Result<Self, Self::Error> {
         Ok(Self::Transaction(GetTransactionResponseRaw {
             status: res.status,
-            envelope_xdr: res.envelope.map(to_xdr).transpose()?,
-            result_xdr: res.result.map(to_xdr).transpose()?,
-            result_meta_xdr: res.result_meta.map(to_xdr).transpose()?,
+            envelope_xdr: res.envelope.as_ref().map(to_xdr).transpose()?,
+            result_xdr: res.result.as_ref().map(to_xdr).transpose()?,
+            result_meta_xdr: res.result_meta.as_ref().map(to_xdr).transpose()?,
         }))
     }
 }
 
-fn to_xdr(data: impl WriteXdr) -> Result<String, xdr::Error> {
+fn to_xdr(data: &impl WriteXdr) -> Result<String, xdr::Error> {
     data.to_xdr_base64(xdr::Limits::none())
 }
 
@@ -151,7 +151,7 @@ mod test {
         let sim = SimulateTransactionResponse::default();
         let original_action: Action = sim.into();
 
-        let id = write(original_action.clone(), rpc_uri.clone()).unwrap();
+        let id = write(original_action.clone(), &rpc_uri.clone()).unwrap();
         let (action, new_rpc_uri) = read(&id).unwrap();
         assert_eq!(rpc_uri, new_rpc_uri);
         match (action, original_action) {

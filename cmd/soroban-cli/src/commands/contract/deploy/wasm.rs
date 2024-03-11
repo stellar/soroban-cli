@@ -176,7 +176,7 @@ impl NetworkRunnable for Cmd {
             .await?
             .try_into()?;
         if global_args.map_or(true, |a| !a.no_cache) {
-            data::write(get_txn_resp, network.rpc_uri()?)?;
+            data::write(get_txn_resp, &network.rpc_uri()?)?;
         }
         Ok(stellar_strkey::Contract(contract_id.0).to_string())
     }
