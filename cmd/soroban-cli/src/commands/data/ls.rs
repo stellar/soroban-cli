@@ -1,7 +1,6 @@
 use clap::command;
 
-use crate::commands::config::data::{self, Action};
-
+use crate::commands::config::data;
 use super::super::config::locator;
 
 #[derive(thiserror::Error, Debug)]
@@ -30,31 +29,16 @@ impl Cmd {
     }
 
     pub fn ls(&self) -> Result<Vec<String>, Error> {
-        data::list_actions()?
+        Ok(data::list_actions()?
             .iter()
-            .map(|(id, action, uri)| {
-                Ok(format!(
-                    "{} {} {uri}\n",
-                    to_datatime(id),
-                    action_type(action)
-                ))
-            })
-            .collect()
+            .map(ToString::to_string)
+            .collect())
     }
 
     pub fn ls_l(&self) -> Result<Vec<String>, Error> {
-        todo!()
+        Ok(data::list_actions()?
+            .iter()
+            .map(ToString::to_string)
+            .collect())
     }
-}
-
-fn to_datatime(id: &ulid::Ulid) -> chrono::DateTime<chrono::Utc> {
-    chrono::DateTime::from_timestamp_millis(id.timestamp_ms().try_into().unwrap()).unwrap()
-}
-
-fn action_type(a: &Action) -> String {
-    match a {
-        Action::Simulation(_) => "Simulation",
-        Action::Transaction(_) => "Transaction",
-    }
-    .to_string()
 }

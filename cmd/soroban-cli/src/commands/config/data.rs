@@ -91,18 +91,35 @@ pub fn list_ulids() -> Result<Vec<ulid::Ulid>, Error> {
     list.sort();
     Ok(list
         .iter()
-        .map(|s| ulid::Ulid::from_str(s))
+        .map(|s| ulid::Ulid::from_str(s.trim_end_matches(".json")))
         .collect::<Result<Vec<_>, _>>()?)
 }
 
-pub fn list_actions() -> Result<Vec<(ulid::Ulid, Action, Uri)>, Error> {
+pub fn list_actions() -> Result<Vec<DatedAction>, Error> {
     list_ulids()?
         .into_iter()
+        .rev()
         .map(|id| {
             let (action, uri) = read(&id)?;
-            Ok((id, action, uri))
+            Ok(DatedAction(id, action, uri))
         })
         .collect::<Result<Vec<_>, Error>>()
+}
+
+pub struct DatedAction(ulid::Ulid, Action, Uri);
+
+impl std::fmt::Display for DatedAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (id, a, uri) = (&self.0, &self.1, &self.2);
+        let datetime = to_datatime(id).format("%b %d %H:%M");
+        write!(f, "{datetime} {uri} {}", a.type_str(),)
+    }
+}
+
+impl DatedAction {}
+
+fn to_datatime(id: &ulid::Ulid) -> chrono::DateTime<chrono::Utc> {
+    chrono::DateTime::from_timestamp_millis(id.timestamp_ms().try_into().unwrap()).unwrap()
 }
 
 #[derive(Serialize, Deserialize)]
@@ -115,6 +132,16 @@ struct Data {
 pub enum Action {
     Simulation(SimulateTransactionResponse),
     Transaction(GetTransactionResponseRaw),
+}
+
+impl Action {
+    pub fn type_str(&self) -> String {
+        match self {
+            Action::Simulation(_) => "Sim",
+            Action::Transaction(_) => "Txn",
+        }
+        .to_string()
+    }
 }
 
 impl From<SimulateTransactionResponse> for Action {

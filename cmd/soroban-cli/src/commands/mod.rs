@@ -101,6 +101,7 @@ impl Root {
             Cmd::Version(version) => version.run(),
             Cmd::Keys(id) => id.run().await?,
             Cmd::Config(c) => c.run().await?,
+            Cmd::Data(data) => data.run()?,
         };
         Ok(())
     }
@@ -138,6 +139,9 @@ pub enum Cmd {
     Network(network::Cmd),
     /// Print version information
     Version(version::Cmd),
+    /// Access cached data
+    #[command(subcommand)]
+    Data(data::Cmd),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -159,6 +163,8 @@ pub enum Error {
     Plugin(#[from] plugin::Error),
     #[error(transparent)]
     Network(#[from] network::Error),
+    #[error(transparent)]
+    Data(#[from] data::Error),
 }
 
 #[async_trait]
