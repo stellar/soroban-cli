@@ -3590,7 +3590,7 @@ dependencies = [
 
 [[package]]
 name = "soroban-cli"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -3640,7 +3640,7 @@ dependencies = [
  "soroban-spec",
  "soroban-spec-json",
  "soroban-spec-rust",
- "soroban-spec-tools 20.3.1",
+ "soroban-spec-tools 20.3.4",
  "soroban-spec-typescript",
  "stellar-strkey 0.0.7",
  "stellar-xdr",
@@ -3735,7 +3735,7 @@ dependencies = [
 
 [[package]]
 name = "soroban-hello"
-version = "20.3.1"
+version = "20.3.4"
 
 [[package]]
 name = "soroban-ledger-snapshot"
@@ -3838,7 +3838,7 @@ dependencies = [
 
 [[package]]
 name = "soroban-spec-json"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "pretty_assertions",
  "serde",
@@ -3868,25 +3868,6 @@ dependencies = [
 
 [[package]]
 name = "soroban-spec-tools"
-version = "20.3.1"
-dependencies = [
- "base64 0.21.7",
- "ethnum",
- "hex",
- "itertools 0.10.5",
- "serde_json",
- "soroban-env-host",
- "soroban-spec",
- "stellar-strkey 0.0.7",
- "stellar-xdr",
- "thiserror",
- "tokio",
- "wasmparser 0.90.0",
- "which",
-]
-
-[[package]]
-name = "soroban-spec-tools"
 version = "20.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5caac0698a57c2e1c5faaec5dfaa2ce511b822e863500ef225cc34203d0b6a4"
@@ -3905,8 +3886,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "soroban-spec-tools"
+version = "20.3.4"
+dependencies = [
+ "base64 0.21.7",
+ "ethnum",
+ "hex",
+ "itertools 0.10.5",
+ "serde_json",
+ "soroban-env-host",
+ "soroban-spec",
+ "stellar-strkey 0.0.7",
+ "stellar-xdr",
+ "thiserror",
+ "tokio",
+ "wasmparser 0.90.0",
+ "which",
+]
+
+[[package]]
 name = "soroban-spec-typescript"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "base64 0.21.7",
  "heck 0.4.1",
@@ -3927,7 +3927,7 @@ dependencies = [
 
 [[package]]
 name = "soroban-test"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -3942,7 +3942,7 @@ dependencies = [
  "soroban-rpc",
  "soroban-sdk",
  "soroban-spec",
- "soroban-spec-tools 20.3.1",
+ "soroban-spec-tools 20.3.4",
  "stellar-strkey 0.0.7",
  "thiserror",
  "tokio",
@@ -4190,28 +4190,28 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
 name = "test_custom_types"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "test_hello_world"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "test_swap"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "test_token"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "soroban-sdk",
  "soroban-token-sdk",
@@ -4219,7 +4219,7 @@ dependencies = [
 
 [[package]]
 name = "test_udt"
-version = "20.3.1"
+version = "20.3.4"
 dependencies = [
  "soroban-sdk",
 ]

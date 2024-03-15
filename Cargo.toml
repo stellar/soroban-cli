@@ -10,7 +10,7 @@ default-members = ["cmd/soroban-cli", "cmd/crates/soroban-spec-tools", "cmd/crat
 exclude = ["cmd/crates/soroban-test/tests/fixtures/hello"]
 
 [workspace.package]
-version = "20.3.1"
+version = "20.3.4"
 rust-version = "1.74.0"
 
 [workspace.dependencies.soroban-env-host]
@@ -38,15 +38,15 @@ version = "=20.3.1"
 # path = "../rs-soroban-sdk/soroban-spec-rust"
 
 [workspace.dependencies.soroban-spec-json]
-version = "20.3.1"
+version = "20.3.4"
 path = "./cmd/crates/soroban-spec-json"
 
 [workspace.dependencies.soroban-spec-typescript]
-version = "20.3.1"
+version = "20.3.4"
 path = "./cmd/crates/soroban-spec-typescript"
 
 [workspace.dependencies.soroban-spec-tools]
-version = "20.3.1"
+version = "20.3.4"
 path = "./cmd/crates/soroban-spec-tools"
 
 [workspace.dependencies.soroban-sdk]
@@ -65,7 +65,7 @@ version = "=20.3.1"
 # rev = "4aef54ff9295c2fca4c5b9fbd2c92d0ff99f67de"
 
 [workspace.dependencies.soroban-cli]
-version = "20.3.1"
+version = "20.3.4"
 path = "cmd/soroban-cli"
 
 [workspace.dependencies.soroban-rpc]
