@@ -11,6 +11,7 @@ pub mod fee;
 pub mod key;
 pub mod log;
 pub mod toid;
+pub mod txn;
 pub mod utils;
 pub mod wasm;
 
