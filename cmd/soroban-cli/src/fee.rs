@@ -1,5 +1,6 @@
 use clap::arg;
-use soroban_env_host::xdr;
+
+use soroban_env_host::xdr::{self, WriteXdr};
 use soroban_rpc::Assembled;
 
 use crate::commands::HEADING_RPC;
@@ -16,9 +17,20 @@ pub struct Args {
     /// Number of instructions to simulate
     #[arg(long, help_heading = HEADING_RPC)]
     pub instructions: Option<u32>,
+    /// Build the transaction only write the output to stdout
+    #[arg(long, help_heading = HEADING_RPC)]
+    build_only: bool,
 }
 
 impl Args {
+    pub fn build_only(&self, txn: &xdr::Transaction) -> Result<(), xdr::Error> {
+        if self.build_only {
+            println!("{}", txn.to_xdr_base64(xdr::Limits::none())?);
+            std::process::exit(0);
+        }
+        Ok(())
+    }
+
     pub fn apply_to_assembled_txn(&self, txn: Assembled) -> Assembled {
         if let Some(instructions) = self.instructions {
             txn.set_max_instructions(instructions)
@@ -47,6 +59,7 @@ impl Default for Args {
             fee: 100,
             cost: false,
             instructions: None,
+            build_only: false,
         }
     }
 }
