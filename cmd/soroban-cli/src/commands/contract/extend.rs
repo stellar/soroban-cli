@@ -154,7 +154,7 @@ impl NetworkRunnable for Cmd {
                 resource_fee: 0,
             }),
         };
-
+        self.fee.exit_if_build_only(&tx)?;
         let res = client
             .prepare_and_send_transaction(&tx, &key, &[], &network.network_passphrase, None, None)
             .await?;

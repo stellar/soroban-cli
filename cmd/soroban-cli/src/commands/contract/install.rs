@@ -119,13 +119,13 @@ impl NetworkRunnable for Cmd {
         let (tx_without_preflight, hash) =
             build_install_contract_code_tx(&contract, sequence + 1, self.fee.fee, &key)?;
 
+        self.fee.exit_if_build_only(&tx_without_preflight)?;
         let code_key =
             xdr::LedgerKey::ContractCode(xdr::LedgerKeyContractCode { hash: hash.clone() });
         let contract_data = client.get_ledger_entries(&[code_key]).await?;
         if !contract_data.entries.unwrap_or_default().is_empty() {
             return Ok(hash);
         }
-
         let txn = client
             .create_assembled_transaction(&tx_without_preflight)
             .await?;

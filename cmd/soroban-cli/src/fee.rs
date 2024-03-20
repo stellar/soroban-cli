@@ -19,11 +19,11 @@ pub struct Args {
     pub instructions: Option<u32>,
     /// Build the transaction only write the output to stdout
     #[arg(long, help_heading = HEADING_RPC)]
-    build_only: bool,
+    pub build_only: bool,
 }
 
 impl Args {
-    pub fn build_only(&self, txn: &xdr::Transaction) -> Result<(), xdr::Error> {
+    pub fn exit_if_build_only(&self, txn: &xdr::Transaction) -> Result<(), xdr::Error> {
         if self.build_only {
             println!("{}", txn.to_xdr_base64(xdr::Limits::none())?);
             std::process::exit(0);

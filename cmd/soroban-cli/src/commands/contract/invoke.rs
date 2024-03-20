@@ -334,6 +334,7 @@ impl NetworkRunnable for Cmd {
             self.fee.fee,
             &key,
         )?;
+        self.fee.exit_if_build_only(&tx)?;
         let txn = client.create_assembled_transaction(&tx).await?;
         let txn = self.fee.apply_to_assembled_txn(txn);
         let (return_value, events) = if self.is_view() {
