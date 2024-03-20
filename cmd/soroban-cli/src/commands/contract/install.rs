@@ -129,7 +129,7 @@ impl NetworkRunnable for Cmd {
         let txn = client
             .create_assembled_transaction(&tx_without_preflight)
             .await?;
-        let txn = self.fee.apply_to_assembled_txn(txn);
+        let txn = self.fee.apply_to_assembled_txn(txn)?;
 
         // Currently internal errors are not returned if the contract code is expired
         if let Some(TransactionResult {

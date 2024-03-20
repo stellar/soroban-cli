@@ -113,7 +113,7 @@ impl NetworkRunnable for Cmd {
     ) -> Result<String, Error> {
         let config = config.unwrap_or(&self.config);
         let wasm_hash = if let Some(wasm) = &self.wasm {
-            let mut fee =  self.fee.clone();
+            let mut fee = self.fee.clone();
             fee.build_only = false;
             let hash = install::Cmd {
                 wasm: wasm::Args { wasm: wasm.clone() },
@@ -168,7 +168,7 @@ impl NetworkRunnable for Cmd {
         )?;
         self.fee.exit_if_build_only(&txn)?;
         let txn = client.create_assembled_transaction(&txn).await?;
-        let txn = self.fee.apply_to_assembled_txn(txn);
+        let txn = self.fee.apply_to_assembled_txn(txn)?;
         client
             .send_assembled_transaction(txn, &key, &[], &network.network_passphrase, None, None)
             .await?;

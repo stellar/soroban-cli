@@ -17,9 +17,12 @@ pub struct Args {
     /// Number of instructions to simulate
     #[arg(long, help_heading = HEADING_RPC)]
     pub instructions: Option<u32>,
-    /// Build the transaction only write the output to stdout
+    /// Build the transaction only write the base64 xdr to stdout
     #[arg(long, help_heading = HEADING_RPC)]
     pub build_only: bool,
+    /// Simulation the transaction only write the base64 to stdout
+    #[arg(long, help_heading = HEADING_RPC, conflicts_with = "build_only")]
+    pub sim_only: bool,
 }
 
 impl Args {
@@ -31,12 +34,22 @@ impl Args {
         Ok(())
     }
 
-    pub fn apply_to_assembled_txn(&self, txn: Assembled) -> Assembled {
-        if let Some(instructions) = self.instructions {
+    pub fn apply_to_assembled_txn(&self, txn: Assembled) -> Result<Assembled, xdr::Error> {
+        let simulated_txn = if let Some(instructions) = self.instructions {
             txn.set_max_instructions(instructions)
         } else {
             add_padding_to_instructions(txn)
+        };
+        if self.sim_only {
+            println!(
+                "{}",
+                simulated_txn
+                    .transaction()
+                    .to_xdr_base64(xdr::Limits::none())?
+            );
+            std::process::exit(0);
         }
+        Ok(simulated_txn)
     }
 }
 
@@ -60,6 +73,7 @@ impl Default for Args {
             cost: false,
             instructions: None,
             build_only: false,
+            sim_only: false,
         }
     }
 }
