@@ -246,6 +246,7 @@ impl TestEnv {
                 verbose: false,
                 very_verbose: false,
                 list: false,
+                no_cache: false,
             }),
             Some(&config),
         )

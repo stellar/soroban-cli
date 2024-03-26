@@ -11,9 +11,9 @@ use stellar_strkey::DecodeError;
 
 use crate::{
     commands::{
-        config::{self, locator},
+        config::{self, data, locator},
         contract::extend,
-        global, NetworkRunnable,
+        global, network, NetworkRunnable,
     },
     key,
     rpc::{self, Client},
@@ -83,6 +83,10 @@ pub enum Error {
     Key(#[from] key::Error),
     #[error(transparent)]
     Extend(#[from] extend::Error),
+    #[error(transparent)]
+    Data(#[from] data::Error),
+    #[error(transparent)]
+    Network(#[from] network::Error),
 }
 
 impl Cmd {
@@ -115,7 +119,7 @@ impl NetworkRunnable for Cmd {
 
     async fn run_against_rpc_server(
         &self,
-        _: Option<&global::Args>,
+        args: Option<&global::Args>,
         config: Option<&config::Args>,
     ) -> Result<u32, Error> {
         let config = config.unwrap_or(&self.config);
@@ -162,7 +166,9 @@ impl NetworkRunnable for Cmd {
         let res = client
             .prepare_and_send_transaction(&tx, &key, &[], &network.network_passphrase, None, None)
             .await?;
-
+        if args.map_or(true, |a| !a.no_cache) {
+            data::write(res.clone().try_into()?, &network.rpc_uri()?)?;
+        }
         let meta = res
             .result_meta
             .as_ref()

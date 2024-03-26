@@ -179,7 +179,10 @@ impl Network {
                 .build()?)
         } else {
             let client = Client::new(&self.rpc_url)?;
+            let network = client.get_network().await?;
+            tracing::debug!("network {network:?}");
             let uri = client.friendbot_url().await?;
+            tracing::debug!("URI {uri:?}");
             Uri::from_str(&format!("{uri}?addr={addr}")).map_err(|e| {
                 tracing::error!("{e}");
                 Error::InvalidUrl(uri.to_string())
@@ -216,6 +219,10 @@ impl Network {
             return Err(Error::InproperResponse(res.to_string()));
         }
         Ok(())
+    }
+
+    pub fn rpc_uri(&self) -> Result<http::Uri, Error> {
+        http::Uri::from_str(&self.rpc_url).map_err(|_| Error::InvalidUrl(self.rpc_url.to_string()))
     }
 }
 

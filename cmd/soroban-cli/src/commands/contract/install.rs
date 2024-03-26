@@ -10,7 +10,8 @@ use soroban_env_host::xdr::{
 };
 
 use super::restore;
-use crate::commands::{global, NetworkRunnable};
+use crate::commands::network;
+use crate::commands::{config::data, global, NetworkRunnable};
 use crate::key;
 use crate::rpc::{self, Client};
 use crate::{commands::config, utils, wasm};
@@ -62,6 +63,10 @@ pub enum Error {
         wasm: std::path::PathBuf,
         version: String,
     },
+    #[error(transparent)]
+    Network(#[from] network::Error),
+    #[error(transparent)]
+    Data(#[from] data::Error),
 }
 
 impl Cmd {
@@ -130,16 +135,17 @@ impl NetworkRunnable for Cmd {
             .create_assembled_transaction(&tx_without_preflight)
             .await?;
         let txn = self.fee.apply_to_assembled_txn(txn);
-
+        let txn_resp = client
+            .send_assembled_transaction(txn, &key, &[], &network.network_passphrase, None, None)
+            .await?;
+        if args.map_or(true, |a| !a.no_cache) {
+            data::write(txn_resp.clone().try_into().unwrap(), &network.rpc_uri()?)?;
+        }
         // Currently internal errors are not returned if the contract code is expired
         if let Some(TransactionResult {
             result: TransactionResultResult::TxInternalError,
             ..
-        }) = client
-            .send_assembled_transaction(txn, &key, &[], &network.network_passphrase, None, None)
-            .await?
-            .result
-            .as_ref()
+        }) = txn_resp.result.as_ref()
         {
             // Now just need to restore it and don't have to install again
             restore::Cmd {
@@ -159,7 +165,9 @@ impl NetworkRunnable for Cmd {
             .run_against_rpc_server(args, None)
             .await?;
         }
-
+        if args.map_or(true, |a| !a.no_cache) {
+            data::write_spec(&hash.to_string(), &wasm_spec.spec)?;
+        }
         Ok(hash)
     }
 }

@@ -135,6 +135,10 @@ Full CLI reference: https://github.com/stellar/soroban-tools/tree/main/docs/soro
 
   Possible values: `true`, `false`
 
+* `--no-cache` — Do not cache your simulations and transactions
+
+  Possible values: `true`, `false`
+
 
 
 
