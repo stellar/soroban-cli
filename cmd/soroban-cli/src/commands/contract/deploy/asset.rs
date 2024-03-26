@@ -101,8 +101,9 @@ impl NetworkRunnable for Cmd {
             network_passphrase,
             &key,
         )?;
+        self.fee.exit_if_build_only(&tx)?;
         let txn = client.create_assembled_transaction(&tx).await?;
-        let txn = self.fee.apply_to_assembled_txn(txn);
+        let txn = self.fee.apply_to_assembled_txn(txn)?;
         client
             .send_assembled_transaction(txn, &key, &[], network_passphrase, None, None)
             .await?;
