@@ -28,6 +28,7 @@ use super::super::{
     config::{self, locator},
     events,
 };
+use crate::rpc::preview_txn;
 use crate::commands::NetworkRunnable;
 use crate::{commands::global, rpc, Pwd};
 use soroban_spec_tools::{contract, Spec};
@@ -336,6 +337,7 @@ impl NetworkRunnable for Cmd {
         )?;
         let txn = client.create_assembled_transaction(&tx).await?;
         let txn = self.fee.apply_to_assembled_txn(txn);
+        println!("TXN:\n{}", preview_txn(txn.transaction()));
         let (return_value, events) = if self.is_view() {
             (
                 txn.sim_response().results()?[0].xdr.clone(),
