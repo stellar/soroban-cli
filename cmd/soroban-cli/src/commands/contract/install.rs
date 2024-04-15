@@ -2,6 +2,7 @@ use std::array::TryFromSliceError;
 use std::fmt::Debug;
 use std::num::ParseIntError;
 
+use cargo_metadata::semver::Op;
 use clap::{command, Parser};
 use soroban_env_host::xdr::{
     self, Error as XdrError, Hash, HostFunction, InvokeHostFunctionOp, Memo, MuxedAccount,
@@ -11,9 +12,10 @@ use soroban_env_host::xdr::{
 
 use super::restore;
 use crate::commands::{global, NetworkRunnable};
-use crate::key;
 use crate::rpc::{self, Client};
+use crate::txn::{InvokeHostFunctionOpBuilder, OperationBuilder, TransactionBuilder};
 use crate::{commands::config, utils, wasm};
+use crate::{key, txn};
 
 const CONTRACT_META_SDK_KEY: &str = "rssdkver";
 const PUBLIC_NETWORK_PASSPHRASE: &str = "Public Global Stellar Network ; September 2015";
@@ -44,6 +46,8 @@ pub enum Error {
     JsonRpc(#[from] jsonrpsee_core::Error),
     #[error(transparent)]
     Rpc(#[from] rpc::Error),
+    #[error(transparent)]
+    TxnBuilder(#[from] txn::Error),
     #[error(transparent)]
     Config(#[from] config::Error),
     #[error(transparent)]
@@ -190,6 +194,22 @@ pub(crate) fn build_install_contract_code_tx(
     fee: u32,
     key: &ed25519_dalek::SigningKey,
 ) -> Result<(Transaction, Hash), XdrError> {
+    let source_account = stellar_strkey::Strkey::PublicKeyEd25519(
+        stellar_strkey::ed25519::PublicKey(key.verifying_key().to_bytes().try_into()?),
+    );
+    let mut txn = TransactionBuilder::new(source_account.clone())?;
+    let op = OperationBuilder::new()
+        .set_source_account(&source_account)
+        .set_host_function(HostFunction::UploadContractWasm(source_code.try_into()?))
+        .build();
+    
+    let op = InvokeHostFunctionOpBuilder::upload(source_code)?.build()?
+     let op_body =   OperationBuilder::new()
+            .set_source_account(&txn.txn.source_account)
+            .set_body(op)
+            .build();
+    
+
     let hash = utils::contract_hash(source_code)?;
 
     let op = Operation {
