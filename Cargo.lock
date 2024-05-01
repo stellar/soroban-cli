@@ -548,15 +548,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam-channel"
-version = "0.5.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "176dc175b78f56c0f321911d9c8eb2b77a78a4860b9c19db83835fea1a46649b"
-dependencies = [
- "crossbeam-utils",
-]
-
-[[package]]
 name = "crossbeam-deque"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2005,15 +1996,6 @@ name = "hashbrown"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
-
-[[package]]
-name = "heck"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
-dependencies = [
- "unicode-segmentation",
-]
 
 [[package]]
 name = "heck"
@@ -3635,8 +3617,6 @@ dependencies = [
 name = "soroban-cli"
 version = "21.0.0-preview.1"
 dependencies = [
- "assert_cmd",
- "assert_fs",
  "async-trait",
  "base64 0.21.7",
  "bollard",
@@ -3663,13 +3643,10 @@ dependencies = [
  "itertools 0.10.5",
  "jsonrpsee-core",
  "jsonrpsee-http-client",
- "num-bigint",
  "openssl",
  "pathdiff",
- "predicates 2.1.5",
  "rand",
  "regex",
- "rpassword",
  "rust-embed",
  "sep5",
  "serde",
@@ -3685,12 +3662,11 @@ dependencies = [
  "soroban-spec-rust",
  "soroban-spec-tools",
  "soroban-spec-typescript",
+ "stellar-config",
  "stellar-rpc-client",
  "stellar-strkey 0.0.8",
  "stellar-xdr",
  "strsim 0.10.0",
- "strum 0.17.1",
- "strum_macros 0.17.1",
  "tempfile",
  "termcolor",
  "termcolor_output",
@@ -3699,7 +3675,6 @@ dependencies = [
  "toml 0.5.11",
  "toml_edit 0.21.1",
  "tracing",
- "tracing-appender",
  "tracing-subscriber",
  "ureq",
  "wasm-opt",
@@ -3898,9 +3873,7 @@ dependencies = [
  "stellar-strkey 0.0.8",
  "stellar-xdr",
  "thiserror",
- "tokio",
  "wasmparser 0.90.0",
- "which",
 ]
 
 [[package]]
@@ -3941,6 +3914,7 @@ dependencies = [
  "soroban-sdk",
  "soroban-spec",
  "soroban-spec-tools",
+ "stellar-config",
  "stellar-rpc-client",
  "stellar-strkey 0.0.8",
  "thiserror",
@@ -3993,6 +3967,48 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
+name = "stellar-config"
+version = "21.0.0-preview.1"
+dependencies = [
+ "base64 0.21.7",
+ "chrono",
+ "clap",
+ "clap-markdown",
+ "crate-git-revision 0.0.4",
+ "dirs",
+ "ed25519-dalek 2.0.0",
+ "ethnum",
+ "futures-util",
+ "hex",
+ "http 0.2.11",
+ "hyper",
+ "hyper-tls",
+ "itertools 0.10.5",
+ "jsonrpsee-core",
+ "jsonrpsee-http-client",
+ "rand",
+ "rpassword",
+ "sep5",
+ "serde",
+ "serde-aux",
+ "serde_json",
+ "sha2 0.10.8",
+ "soroban-env-host",
+ "soroban-sdk",
+ "soroban-spec",
+ "stellar-rpc-client",
+ "stellar-strkey 0.0.8",
+ "stellar-xdr",
+ "tempfile",
+ "termcolor",
+ "termcolor_output",
+ "thiserror",
+ "tokio",
+ "toml 0.5.11",
+ "tracing",
+]
 
 [[package]]
 name = "stellar-rpc-client"
@@ -4077,27 +4093,9 @@ checksum = "5ee073c9e4cd00e28217186dbe12796d692868f432bf2e97ee73bed0c56dfa01"
 
 [[package]]
 name = "strum"
-version = "0.17.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "530efb820d53b712f4e347916c5e7ed20deb76a4f0457943b3182fb889b06d2c"
-
-[[package]]
-name = "strum"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "063e6045c0e62079840579a7e47a355ae92f60eb74daaf156fb1e84ba164e63f"
-
-[[package]]
-name = "strum_macros"
-version = "0.17.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e6e163a520367c465f59e0a61a23cfae3b10b6546d78b6f672a382be79f7110"
-dependencies = [
- "heck 0.3.3",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
 
 [[package]]
 name = "strum_macros"
@@ -4507,18 +4505,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tracing-appender"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3566e8ce28cc0a3fe42519fc80e6b4c943cc4c8cef275620eb8dac2d3d4e06cf"
-dependencies = [
- "crossbeam-channel",
- "thiserror",
- "time",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "tracing-attributes"
 version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4606,12 +4592,6 @@ checksum = "a56d1686db2308d901306f92a263857ef59ea39678a5458e7cb17f01415101f5"
 dependencies = [
  "tinyvec",
 ]
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4c87d22b6e3f4a18d4d40ef354e97c90fcb14dd91d7dc0aa9d8a1172ebf7202"
 
 [[package]]
 name = "unicode-width"
@@ -4787,8 +4767,8 @@ checksum = "effbef3bd1dde18acb401f73e740a6f3d4a1bc651e9773bddc512fe4d8d68f67"
 dependencies = [
  "anyhow",
  "libc",
- "strum 0.24.1",
- "strum_macros 0.24.3",
+ "strum",
+ "strum_macros",
  "tempfile",
  "thiserror",
  "wasm-opt-cxx-sys",

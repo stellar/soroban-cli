@@ -1,9 +1,8 @@
 use std::path::Path;
 
-use soroban_cli::commands::{
-    config::{locator::KeyType, secret::Secret},
-    contract,
-};
+use config::{locator::KeyType, secret::Secret};
+
+use soroban_cli::commands::contract;
 use soroban_test::{TestEnv, Wasm, TEST_ACCOUNT};
 
 pub const CUSTOM_TYPES: &Wasm = &Wasm::Custom("test-wasms", "test_custom_types");

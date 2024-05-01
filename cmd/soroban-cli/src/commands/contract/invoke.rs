@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::{Infallible, TryInto};
 use std::ffi::OsString;
 use std::num::ParseIntError;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::{fmt::Debug, fs, io};
 
@@ -24,12 +24,11 @@ use soroban_env_host::{
 use soroban_spec::read::FromWasmError;
 use stellar_strkey::DecodeError;
 
-use super::super::{
-    config::{self, locator},
-    events,
-};
+use config::locator;
+
+use super::super::events;
 use crate::commands::NetworkRunnable;
-use crate::{commands::global, rpc, Pwd};
+use crate::{commands::global, rpc};
 use soroban_spec_tools::{contract, Spec};
 
 #[derive(Parser, Debug, Default, Clone)]
@@ -60,12 +59,6 @@ impl FromStr for Cmd {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use clap::{CommandFactory, FromArgMatches};
         Self::from_arg_matches_mut(&mut Self::command().get_matches_from(s.split_whitespace()))
-    }
-}
-
-impl Pwd for Cmd {
-    fn set_pwd(&mut self, pwd: &Path) {
-        self.config.set_pwd(pwd);
     }
 }
 
@@ -296,6 +289,7 @@ impl NetworkRunnable for Cmd {
     type Error = Error;
     type Result = String;
 
+    #[allow(clippy::map_clone)]
     async fn run_against_rpc_server(
         &self,
         global_args: Option<&global::Args>,

@@ -4,8 +4,10 @@ use soroban_spec_tools::contract;
 use std::{fmt::Debug, path::PathBuf};
 use tracing::debug;
 
+use config::locator;
+
 use super::SpecOutput;
-use crate::{commands::config::locator, wasm};
+use crate::wasm;
 
 #[derive(Parser, Debug, Clone)]
 #[group(skip)]

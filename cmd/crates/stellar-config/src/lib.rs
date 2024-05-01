@@ -1,47 +1,25 @@
+#![allow(clippy::missing_errors_doc)]
 use std::path::PathBuf;
 
-use clap::{arg, command, Parser};
+use clap::{arg, command};
 use serde::{Deserialize, Serialize};
-
-use crate::Pwd;
 
 use self::{network::Network, secret::Secret};
 
-use super::{keys, network};
-
 pub mod locator;
+pub mod network;
 pub mod secret;
 
-#[derive(Debug, Parser)]
-pub enum Cmd {
-    /// Configure different networks. Depraecated, use `soroban network` instead.
-    #[command(subcommand)]
-    Network(network::Cmd),
-    /// Identity management. Deprecated, use `soroban keys` instead.
-    #[command(subcommand)]
-    Identity(keys::Cmd),
-}
+pub const STELLAR_CONFIG: &str = "STELLAR CONFIG";
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    Identity(#[from] keys::Error),
-    #[error(transparent)]
-    Network(#[from] network::Error),
-    #[error(transparent)]
     Secret(#[from] secret::Error),
     #[error(transparent)]
     Config(#[from] locator::Error),
-}
-
-impl Cmd {
-    pub async fn run(&self) -> Result<(), Error> {
-        match &self {
-            Cmd::Identity(identity) => identity.run().await?,
-            Cmd::Network(network) => network.run().await?,
-        }
-        Ok(())
-    }
+    #[error(transparent)]
+    Network(#[from] network::Error),
 }
 
 #[derive(Debug, clap::Args, Clone, Default)]
@@ -82,12 +60,6 @@ impl Args {
 
     pub fn config_dir(&self) -> Result<PathBuf, Error> {
         Ok(self.locator.config_dir()?)
-    }
-}
-
-impl Pwd for Args {
-    fn set_pwd(&mut self, pwd: &std::path::Path) {
-        self.locator.set_pwd(pwd);
     }
 }
 

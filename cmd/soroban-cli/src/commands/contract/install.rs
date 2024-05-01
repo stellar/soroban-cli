@@ -13,7 +13,7 @@ use super::restore;
 use crate::commands::{global, NetworkRunnable};
 use crate::key;
 use crate::rpc::{self, Client};
-use crate::{commands::config, utils, wasm};
+use crate::{utils, wasm};
 
 const CONTRACT_META_SDK_KEY: &str = "rssdkver";
 const PUBLIC_NETWORK_PASSPHRASE: &str = "Public Global Stellar Network ; September 2015";

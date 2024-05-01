@@ -1,10 +1,10 @@
 use predicates::boolean::PredicateBooleanExt;
-use soroban_cli::commands::{
-    config::{locator, secret},
-    contract::{self, fetch},
-};
+
+use config::{locator, network::passphrase, secret};
+
+use soroban_cli::commands::contract::{self, fetch};
 use soroban_rpc::GetLatestLedgerResponse;
-use soroban_test::{AssertExt, TestEnv, LOCAL_NETWORK_PASSPHRASE};
+use soroban_test::{AssertExt, TestEnv};
 
 use crate::integration::util::extend_contract;
 
@@ -323,7 +323,7 @@ async fn fetch(sandbox: &TestEnv, id: &str) {
         "--rpc-url",
         &sandbox.rpc_url,
         "--network-passphrase",
-        LOCAL_NETWORK_PASSPHRASE,
+        passphrase::LOCAL,
         "--id",
         id,
         "--out-file",

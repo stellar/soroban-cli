@@ -37,6 +37,11 @@ path = "./cmd/crates/soroban-spec-typescript"
 version = "21.0.0-preview.1"
 path = "./cmd/crates/soroban-spec-tools"
 
+[workspace.dependencies.config]
+version = "=21.0.0-preview.1"
+path = "./cmd/crates/stellar-config"
+package = "stellar-config"
+
 [workspace.dependencies.soroban-sdk]
 version = "=21.0.1-preview.1"
 

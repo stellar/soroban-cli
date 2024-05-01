@@ -1,7 +1,7 @@
 use clap::arg;
 use std::path::PathBuf;
 
-use super::config;
+use config;
 
 #[derive(Debug, clap::Args, Clone, Default)]
 #[group(skip)]

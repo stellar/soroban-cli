@@ -8,8 +8,6 @@ use std::{
     str::FromStr,
 };
 
-use crate::{utils::find_config_dir, Pwd};
-
 use super::{network::Network, secret::Secret};
 
 #[derive(thiserror::Error, Debug)]
@@ -59,7 +57,7 @@ pub enum Error {
     #[error(transparent)]
     String(#[from] std::string::FromUtf8Error),
     #[error(transparent)]
-    Secret(#[from] crate::commands::config::secret::Error),
+    Secret(#[from] crate::secret::Error),
 }
 
 #[derive(Debug, clap::Args, Default, Clone)]
@@ -351,8 +349,17 @@ fn global_config_path() -> Result<PathBuf, Error> {
     .join("soroban"))
 }
 
-impl Pwd for Args {
-    fn set_pwd(&mut self, pwd: &Path) {
-        self.config_dir = Some(pwd.to_path_buf());
+/// # Errors
+/// May not find a config dir
+pub fn find_config_dir(mut pwd: std::path::PathBuf) -> std::io::Result<std::path::PathBuf> {
+    let soroban_dir = |p: &std::path::Path| p.join(".soroban");
+    while !soroban_dir(&pwd).exists() {
+        if !pwd.pop() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "soroban directory not found",
+            ));
+        }
     }
+    Ok(soroban_dir(&pwd))
 }

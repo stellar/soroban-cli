@@ -1137,8 +1137,7 @@ impl Spec {
                     ScSpecEntry::UdtStructV0(ScSpecUdtStructV0 { fields, .. })
                         if fields
                             .first()
-                            .map(|f| f.name.to_utf8_string_lossy() == "0")
-                            .unwrap_or_default() =>
+                            .is_some_and(|f| f.name.to_utf8_string_lossy() == "0") =>
                     {
                         let fields = fields
                             .iter()

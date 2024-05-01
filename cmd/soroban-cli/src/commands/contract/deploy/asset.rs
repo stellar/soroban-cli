@@ -12,7 +12,7 @@ use std::convert::Infallible;
 use std::{array::TryFromSliceError, fmt::Debug, num::ParseIntError};
 
 use crate::{
-    commands::{config, global, NetworkRunnable},
+    commands::{global, NetworkRunnable},
     rpc::{Client, Error as SorobanRpcError},
     utils::{contract_id_hash_from_asset, parsing::parse_asset},
 };

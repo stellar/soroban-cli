@@ -4,7 +4,6 @@
     clippy::missing_panics_doc
 )]
 pub(crate) use soroban_rpc as rpc;
-use std::path::Path;
 
 pub mod commands;
 pub mod fee;
@@ -46,8 +45,4 @@ where
     fn parse_arg_vec(args: &[&str]) -> Result<T, clap::Error> {
         T::from_arg_matches_mut(&mut T::command().no_binary_name(true).get_matches_from(args))
     }
-}
-
-pub trait Pwd {
-    fn set_pwd(&mut self, pwd: &Path);
 }

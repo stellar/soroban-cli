@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::{fmt::Debug, fs, io};
 
@@ -19,13 +19,12 @@ use soroban_env_host::{
 use soroban_spec::read::FromWasmError;
 use stellar_strkey::DecodeError;
 
-use super::super::config::{self, locator};
-use crate::commands::network::{self, Network};
 use crate::commands::{global, NetworkRunnable};
 use crate::{
     rpc::{self, Client},
-    utils, Pwd,
+    utils,
 };
+use config::{locator, network};
 
 #[derive(Parser, Debug, Default, Clone)]
 #[allow(clippy::struct_excessive_bools)]
@@ -49,12 +48,6 @@ impl FromStr for Cmd {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use clap::{CommandFactory, FromArgMatches};
         Self::from_arg_matches_mut(&mut Self::command().get_matches_from(s.split_whitespace()))
-    }
-}
-
-impl Pwd for Cmd {
-    fn set_pwd(&mut self, pwd: &Path) {
-        self.locator.set_pwd(pwd);
     }
 }
 
@@ -119,7 +112,7 @@ impl Cmd {
         self.run_against_rpc_server(None, None).await
     }
 
-    pub fn network(&self) -> Result<Network, Error> {
+    pub fn network(&self) -> Result<network::Network, Error> {
         Ok(self.network.get(&self.locator)?)
     }
 

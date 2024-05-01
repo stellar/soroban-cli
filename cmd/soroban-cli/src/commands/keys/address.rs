@@ -1,7 +1,7 @@
-use crate::commands::config::secret;
+use config::secret;
 
-use super::super::config::locator;
 use clap::arg;
+use config::locator;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

@@ -1,7 +1,7 @@
 use clap::command;
 
-use super::locator;
-use crate::commands::config::locator::Location;
+use config::locator;
+use config::locator::Location;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

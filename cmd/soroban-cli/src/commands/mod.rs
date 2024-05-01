@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use clap::{command, error::ErrorKind, CommandFactory, FromArgMatches, Parser};
 
 pub mod completion;
-pub mod config;
+
 pub mod contract;
 pub mod events;
 pub mod global;
@@ -99,7 +99,6 @@ impl Root {
             Cmd::Network(network) => network.run().await?,
             Cmd::Version(version) => version.run(),
             Cmd::Keys(id) => id.run().await?,
-            Cmd::Config(c) => c.run().await?,
         };
         Ok(())
     }
@@ -118,9 +117,6 @@ pub enum Cmd {
     /// Print shell completion code for the specified shell.
     #[command(long_about = completion::LONG_ABOUT)]
     Completion(completion::Cmd),
-    /// Deprecated, use `soroban keys` and `soroban network` instead
-    #[command(subcommand)]
-    Config(config::Cmd),
     /// Tools for smart contract developers
     #[command(subcommand)]
     Contract(contract::Cmd),
@@ -150,8 +146,6 @@ pub enum Error {
     Keys(#[from] keys::Error),
     #[error(transparent)]
     Lab(#[from] lab::Error),
-    #[error(transparent)]
-    Config(#[from] config::Error),
     #[error(transparent)]
     Clap(#[from] clap::error::Error),
     #[error(transparent)]

@@ -29,8 +29,10 @@ use assert_cmd::{assert::Assert, Command};
 use assert_fs::{fixture::FixtureError, prelude::PathChild, TempDir};
 use fs_extra::dir::CopyOptions;
 
+use config::network::{self, passphrase};
+
 use soroban_cli::{
-    commands::{config, contract::invoke, global, keys, network, NetworkRunnable},
+    commands::{contract::invoke, global, keys, NetworkRunnable},
     CommandParser,
 };
 
@@ -38,8 +40,6 @@ mod wasm;
 pub use wasm::Wasm;
 
 pub const TEST_ACCOUNT: &str = "test";
-
-pub const LOCAL_NETWORK_PASSPHRASE: &str = "Standalone Network ; February 2017";
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -125,7 +125,7 @@ impl TestEnv {
         cmd.arg(subcommand)
             .env("SOROBAN_ACCOUNT", TEST_ACCOUNT)
             .env("SOROBAN_RPC_URL", &self.rpc_url)
-            .env("SOROBAN_NETWORK_PASSPHRASE", LOCAL_NETWORK_PASSPHRASE)
+            .env("SOROBAN_NETWORK_PASSPHRASE", passphrase::LOCAL)
             .env("XDG_CONFIG_HOME", self.temp_dir.as_os_str())
             .current_dir(&self.temp_dir);
         cmd
@@ -225,7 +225,7 @@ impl TestEnv {
         let config = config::Args {
             network: network::Args {
                 rpc_url: Some(self.rpc_url.clone()),
-                network_passphrase: Some(LOCAL_NETWORK_PASSPHRASE.to_string()),
+                network_passphrase: Some(passphrase::LOCAL.to_string()),
                 network: None,
             },
             source_account: account.to_string(),

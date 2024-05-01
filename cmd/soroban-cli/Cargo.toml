@@ -46,6 +46,8 @@ soroban-ledger-snapshot = { workspace = true }
 stellar-strkey = { workspace = true }
 soroban-sdk = { workspace = true }
 soroban-rpc = { workspace = true }
+config = { workspace = true }
+
 cargo_toml = "0.20.1"
 clap = { workspace = true, features = [
     "derive",
@@ -61,7 +63,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde-aux = { workspace = true }
 hex = { workspace = true }
-num-bigint = "0.4"
+
 tokio = { version = "1", features = ["full"] }
 termcolor = { workspace = true }
 termcolor_output = { workspace = true }
@@ -78,7 +80,6 @@ http = "0.2.9"
 regex = "1.6.0"
 wasm-opt = { version = "0.114.0", optional = true }
 chrono = "0.4.27"
-rpassword = "7.2.0"
 dirs = "4.0.0"
 toml = "0.5.9"
 itertools = "0.10.5"
@@ -90,13 +91,11 @@ which = { workspace = true, features = ["regex"] }
 strsim = "0.10.0"
 heck = "0.5.0"
 tracing = { workspace = true }
-tracing-appender = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 cargo_metadata = "0.15.4"
 pathdiff = "0.2.1"
 dotenvy = "0.15.7"
-strum = "0.17.1"
-strum_macros = "0.17.1"
+
 gix = { version = "0.58.0", default-features = false, features = [
     "blocking-http-transport-reqwest-rust-tls",
     "worktree-mutation",
@@ -119,8 +118,3 @@ serde.workspace = true
 thiserror.workspace = true
 ureq = { version = "2.9.1", features = ["json"] }
 
-
-[dev-dependencies]
-assert_cmd = "2.0.4"
-assert_fs = "1.0.7"
-predicates = "2.1.5"

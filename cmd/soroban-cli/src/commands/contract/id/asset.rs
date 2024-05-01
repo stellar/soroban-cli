@@ -1,6 +1,6 @@
 use clap::{arg, command, Parser};
 
-use crate::commands::config;
+use config;
 
 use crate::utils::contract_id_hash_from_asset;
 use crate::utils::parsing::parse_asset;
@@ -20,7 +20,7 @@ pub enum Error {
     #[error(transparent)]
     ParseError(#[from] crate::utils::parsing::Error),
     #[error(transparent)]
-    ConfigError(#[from] crate::commands::config::Error),
+    ConfigError(#[from] config::Error),
     #[error(transparent)]
     Xdr(#[from] soroban_env_host::xdr::Error),
 }

@@ -5,7 +5,7 @@ use soroban_env_host::xdr::{
     HashIdPreimageContractId, Limits, PublicKey, ScAddress, Uint256, WriteXdr,
 };
 
-use crate::commands::config;
+use config;
 
 #[derive(Parser, Debug, Clone)]
 #[group(skip)]
@@ -22,7 +22,7 @@ pub enum Error {
     #[error(transparent)]
     ParseError(#[from] crate::utils::parsing::Error),
     #[error(transparent)]
-    ConfigError(#[from] crate::commands::config::Error),
+    ConfigError(#[from] config::Error),
     #[error(transparent)]
     Xdr(#[from] xdr::Error),
     #[error("cannot parse salt {0}")]

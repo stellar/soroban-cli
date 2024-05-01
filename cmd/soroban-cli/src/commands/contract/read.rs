@@ -14,7 +14,7 @@ use soroban_env_host::{
 use soroban_sdk::xdr::Limits;
 
 use crate::{
-    commands::{config, global, NetworkRunnable},
+    commands::{global, NetworkRunnable},
     key,
     rpc::{self, Client, FullLedgerEntries, FullLedgerEntry},
 };

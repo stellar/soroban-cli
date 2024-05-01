@@ -1,4 +1,4 @@
-use std::{fmt::Debug, path::Path, str::FromStr};
+use std::{fmt::Debug, str::FromStr};
 
 use clap::{command, Parser};
 use soroban_env_host::xdr::{
@@ -9,10 +9,10 @@ use soroban_env_host::xdr::{
 };
 
 use crate::{
-    commands::{config, global, NetworkRunnable},
+    commands::{global, NetworkRunnable},
     key,
     rpc::{self, Client},
-    wasm, Pwd,
+    wasm,
 };
 
 const MAX_LEDGERS_TO_EXTEND: u32 = 535_679;
@@ -40,12 +40,6 @@ impl FromStr for Cmd {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use clap::{CommandFactory, FromArgMatches};
         Self::from_arg_matches_mut(&mut Self::command().get_matches_from(s.split_whitespace()))
-    }
-}
-
-impl Pwd for Cmd {
-    fn set_pwd(&mut self, pwd: &Path) {
-        self.config.set_pwd(pwd);
     }
 }
 

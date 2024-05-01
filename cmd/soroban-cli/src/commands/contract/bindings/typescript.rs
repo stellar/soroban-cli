@@ -4,12 +4,12 @@ use clap::{command, Parser};
 use soroban_spec_tools::contract as contract_spec;
 use soroban_spec_typescript::{self as typescript, boilerplate::Project};
 
-use crate::commands::{
-    config::locator,
-    contract::{self, fetch},
+use crate::commands::contract::{self, fetch};
+use crate::wasm;
+use config::{
+    locator,
     network::{self, Network},
 };
-use crate::wasm;
 
 #[derive(Parser, Debug, Clone)]
 #[group(skip)]

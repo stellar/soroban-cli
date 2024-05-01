@@ -1,11 +1,12 @@
+use config::network::passphrase;
 use soroban_cli::utils::contract_id_hash_from_asset;
-use soroban_test::{AssertExt, TestEnv, LOCAL_NETWORK_PASSPHRASE};
+use soroban_test::{AssertExt, TestEnv};
 
 #[tokio::test]
 #[ignore]
 async fn burn() {
     let sandbox = &TestEnv::new();
-    let network_passphrase = LOCAL_NETWORK_PASSPHRASE.to_string();
+    let network_passphrase = passphrase::LOCAL;
     let address = sandbox
         .new_assert_cmd("keys")
         .arg("address")
@@ -24,7 +25,7 @@ async fn burn() {
         .success();
     // wrap_cmd(&asset).run().await.unwrap();
     let asset = soroban_cli::utils::parsing::parse_asset(&asset).unwrap();
-    let hash = contract_id_hash_from_asset(&asset, &network_passphrase).unwrap();
+    let hash = contract_id_hash_from_asset(&asset, network_passphrase).unwrap();
     let id = stellar_strkey::Contract(hash.0).to_string();
     println!("{id}, {address}");
     sandbox

@@ -1,8 +1,8 @@
 use clap::{arg, command};
 
-use crate::commands::network;
+use config::network;
 
-use super::super::config::{
+use config::{
     locator,
     secret::{self, Secret},
 };

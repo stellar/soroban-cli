@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::{io::Write, str::FromStr};
 use stellar_strkey::ed25519::{PrivateKey, PublicKey};
 
-use crate::utils;
-
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("invalid secret key")]
@@ -121,7 +119,9 @@ impl Secret {
     }
 
     pub fn key_pair(&self, index: Option<usize>) -> Result<ed25519_dalek::SigningKey, Error> {
-        Ok(utils::into_signing_key(&self.private_key(index)?))
+        Ok(ed25519_dalek::SigningKey::from_bytes(
+            &self.private_key(index)?.0,
+        ))
     }
 
     pub fn from_seed(seed: Option<&str>) -> Result<Self, Error> {

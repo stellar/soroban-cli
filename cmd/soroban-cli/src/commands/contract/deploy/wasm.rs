@@ -19,7 +19,7 @@ use crate::commands::{
     global, NetworkRunnable,
 };
 use crate::{
-    commands::{config, contract::install, HEADING_RPC},
+    commands::{contract::install, HEADING_RPC},
     rpc::{self, Client},
     utils, wasm,
 };
