@@ -199,10 +199,23 @@ impl Args {
     pub fn read_network(&self, name: &str) -> Result<Network, Error> {
         let res = KeyType::Network.read_with_global(name, &self.local_config()?);
         if let Err(Error::ConfigMissing(_, _)) = &res {
-            if name == "futurenet" {
-                let network = Network::futurenet();
-                self.write_network(name, &network)?;
-                return Ok(network);
+            match name {
+                "pubnet" => {
+                    let network = Network::pubnet();
+                    self.write_network(name, &network)?;
+                    return Ok(network);
+                }
+                "testnet" => {
+                    let network = Network::testnet();
+                    self.write_network(name, &network)?;
+                    return Ok(network);
+                }
+                "futurenet" => {
+                    let network = Network::futurenet();
+                    self.write_network(name, &network)?;
+                    return Ok(network);
+                }
+                _ => {}
             }
         }
         res

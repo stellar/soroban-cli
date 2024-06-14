@@ -1,12 +1,13 @@
 use std::str::FromStr;
 
 use clap::{arg, Parser};
+use http::Uri;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use stellar_strkey::ed25519::PublicKey;
 
 use crate::{
-    commands::HEADING_RPC,
+    commands::HEADING_NETWORK,
     rpc::{self, Client},
 };
 
@@ -89,6 +90,8 @@ pub enum Error {
     InproperResponse(String),
     #[error("Currently not supported on windows. Please visit:\n{0}")]
     WindowsNotSupported(String),
+    #[error("Archive URL not configured")]
+    ArchiveUrlNotConfigured,
 }
 
 impl Cmd {
@@ -123,7 +126,7 @@ pub struct Args {
         requires = "network_passphrase",
         required_unless_present = "network",
         env = "STELLAR_RPC_URL",
-        help_heading = HEADING_RPC,
+        help_heading = HEADING_NETWORK,
     )]
     pub rpc_url: Option<String>,
     /// Network passphrase to sign the transaction sent to the rpc server
@@ -132,15 +135,23 @@ pub struct Args {
         requires = "rpc_url",
         required_unless_present = "network",
         env = "STELLAR_NETWORK_PASSPHRASE",
-        help_heading = HEADING_RPC,
+        help_heading = HEADING_NETWORK,
     )]
     pub network_passphrase: Option<String>,
+    /// Archive URL
+    #[arg(
+        long = "archive-url",
+        requires = "network_passphrase",
+        env = "STELLAR_ARCHIVE_URL",
+        help_heading = HEADING_NETWORK,
+    )]
+    pub archive_url: Option<String>,
     /// Name of network to use from config
     #[arg(
         long,
         required_unless_present = "rpc_url",
         env = "STELLAR_NETWORK",
-        help_heading = HEADING_RPC,
+        help_heading = HEADING_NETWORK,
     )]
     pub network: Option<String>,
 }
@@ -158,6 +169,7 @@ impl Args {
             Ok(Network {
                 rpc_url,
                 network_passphrase,
+                archive_url: self.archive_url.clone(),
             })
         } else {
             Err(Error::Network)
@@ -172,21 +184,27 @@ pub struct Network {
     #[arg(
         long = "rpc-url",
         env = "STELLAR_RPC_URL",
-        help_heading = HEADING_RPC,
+        help_heading = HEADING_NETWORK,
     )]
     pub rpc_url: String,
     /// Network passphrase to sign the transaction sent to the rpc server
     #[arg(
-            long,
-            env = "STELLAR_NETWORK_PASSPHRASE",
-            help_heading = HEADING_RPC,
-        )]
+        long,
+        env = "STELLAR_NETWORK_PASSPHRASE",
+        help_heading = HEADING_NETWORK,
+    )]
     pub network_passphrase: String,
+    /// Archive URL
+    #[arg(
+        long = "archive-url",
+        env = "STELLAR_ARCHIVE_URL",
+        help_heading = HEADING_NETWORK,
+    )]
+    pub archive_url: Option<String>,
 }
 
 impl Network {
     pub async fn helper_url(&self, addr: &str) -> Result<http::Uri, Error> {
-        use http::Uri;
         tracing::debug!("address {addr:?}");
         let rpc_uri = Uri::from_str(&self.rpc_url)
             .map_err(|_| Error::InvalidUrl(self.rpc_url.to_string()))?;
@@ -209,6 +227,30 @@ impl Network {
                 Error::InvalidUrl(uri.to_string())
             })
         }
+    }
+
+    pub fn archive_url(&self) -> Result<http::Uri, Error> {
+        // Return the configured archive URL, or if one is not configured, guess
+        // at an appropriate archive URL given the network passphrase.
+        self.archive_url
+            .as_deref()
+            .or(match self.network_passphrase.as_str() {
+                "Public Global Stellar Network ; September 2015" => {
+                    Some("https://history.stellar.org/prd/core-live/core_live_001")
+                }
+                "Test SDF Network ; September 2015" => {
+                    Some("https://history.stellar.org/prd/core-testnet/core_testnet_001")
+                }
+                "Test SDF Future Network ; October 2022" => {
+                    Some("https://history-futurenet.stellar.org")
+                }
+                _ => None,
+            })
+            .ok_or(Error::ArchiveUrlNotConfigured)
+            .and_then(|archive_url| {
+                Uri::from_str(archive_url)
+                    .map_err(|_| Error::InvalidUrl((*archive_url).to_string()))
+            })
     }
 
     #[allow(clippy::similar_names)]
@@ -248,10 +290,25 @@ impl Network {
 }
 
 impl Network {
+    pub fn pubnet() -> Self {
+        Network {
+            rpc_url: String::new(),
+            network_passphrase: "Public Global Stellar Network ; September 2015".to_owned(),
+            archive_url: None,
+        }
+    }
+    pub fn testnet() -> Self {
+        Network {
+            rpc_url: "https://soroban-testnet.stellar.org:443".to_owned(),
+            network_passphrase: "Test SDF Network ; September 2015".to_owned(),
+            archive_url: None,
+        }
+    }
     pub fn futurenet() -> Self {
         Network {
             rpc_url: "https://rpc-futurenet.stellar.org:443".to_owned(),
             network_passphrase: "Test SDF Future Network ; October 2022".to_owned(),
+            archive_url: None,
         }
     }
 }

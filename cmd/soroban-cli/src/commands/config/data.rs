@@ -50,6 +50,12 @@ pub fn spec_dir() -> Result<std::path::PathBuf, Error> {
     Ok(dir)
 }
 
+pub fn bucket_dir() -> Result<std::path::PathBuf, Error> {
+    let dir = data_local_dir()?.join("bucket");
+    std::fs::create_dir_all(&dir)?;
+    Ok(dir)
+}
+
 pub fn write(action: Action, rpc_url: &Uri) -> Result<ulid::Ulid, Error> {
     let data = Data {
         action,

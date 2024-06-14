@@ -27,7 +27,7 @@ endif
 install_rust: install
 
 install:
-	cargo install --force --locked --path ./cmd/stellar-cli --debug
+	cargo install --force --locked --path ./cmd/stellar-cli
 	cargo install --force --locked --path ./cmd/crates/soroban-test/tests/fixtures/hello --root ./target --debug --quiet
 
 # regenerate the example lib in `cmd/crates/soroban-spec-typsecript/fixtures/ts`
