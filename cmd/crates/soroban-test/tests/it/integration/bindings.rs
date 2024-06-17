@@ -72,4 +72,11 @@ async fn invoke_test_bindings_context_failure() {
         !content.contains("__check_auth"),
         "Test failed: `__check_auth` found in src/index.ts"
     );
+
+    // check enum message + doc working properly
+    assert!(
+        content.contains("The requested item was not found.")
+            && content.contains("1: {message:\"NotFound\"}"),
+        r#"Test failed: Error enum not properly formatted in src/index.ts"#
+    );
 }

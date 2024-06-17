@@ -11,17 +11,27 @@ pub struct Contract;
 
 #[contracterror]
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
+/// Represents the different kinds of errors that can occur in the application.
 pub enum Error {
+    /// The requested item was not found.
     NotFound = 1,
+
+    /// The operation was not permitted.
     NotPermitted = 2,
+
     ClientDataJsonChallengeIncorrect = 3,
-    Secp256r1PublicKeyParse = 4,
-    Secp256r1SignatureParse = 5,
-    Secp256r1VerifyFailed = 6,
-    JsonParseError = 7,
-    InvalidContext = 8,
-    AlreadyInited = 9,
-    NotInited = 10,
+
+    /// An error occurred while parsing JSON.
+    JsonParseError = 4,
+
+    /// The provided context is invalid.
+    InvalidContext = 5,
+
+    /// The system has already been initialized.
+    AlreadyInited = 6,
+
+    /// The system has not been initialized yet.
+    NotInited = 7,
 }
 
 const SIGNERS: Symbol = symbol_short!("sigs");

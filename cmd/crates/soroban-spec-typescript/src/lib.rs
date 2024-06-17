@@ -106,17 +106,22 @@ pub fn generate(spec: &[ScSpecEntry]) -> String {
     format!("{top}\n\n{bottom}")
 }
 
-fn doc_to_ts_doc(doc: &str, method: Option<&str>) -> String {
+fn doc_to_ts_doc(doc: &str, method: Option<&str>, indent_level: usize) -> String {
+    let indent = "  ".repeat(indent_level);
     if let Some(method) = method {
         let doc = if doc.is_empty() {
             String::new()
         } else {
-            format!("   *\n   * {}", doc.split('\n').join("\n   * "))
+            format!(
+                "\n{}   * {}",
+                indent,
+                doc.split('\n').join(&format!("\n{indent}   * "))
+            )
         };
         return format!(
-            r#"/**
-   * Construct and simulate a {method} transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.{doc}
-   */"#
+            r#"{indent}/**
+{indent}   * Construct and simulate a {method} transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.{doc}
+{indent}   */"#
         );
     }
 
@@ -124,11 +129,11 @@ fn doc_to_ts_doc(doc: &str, method: Option<&str>) -> String {
         return String::new();
     }
 
-    let doc = doc.split('\n').join("\n * ");
+    let doc = doc.split('\n').join(&format!("\n{indent} * "));
     format!(
-        r#"/**
- * {doc}
- */
+        r#"{indent}/**
+{indent} * {doc}
+{indent} */
 "#
     )
 }
@@ -188,7 +193,7 @@ pub fn entry_to_method_type(entry: &Entry) -> String {
                     )
                 })
                 .unwrap_or_default();
-            let doc = doc_to_ts_doc(doc, Some(name));
+            let doc = doc_to_ts_doc(doc, Some(name), 0);
             let return_type = outputs_to_return_type(outputs);
             format!(
                 r#"
@@ -199,7 +204,7 @@ pub fn entry_to_method_type(entry: &Entry) -> String {
         }
 
         Entry::Struct { doc, name, fields } => {
-            let docs = doc_to_ts_doc(doc, None);
+            let docs = doc_to_ts_doc(doc, None, 0);
             let fields = fields.iter().map(field_to_ts).join("\n  ");
             format!(
                 r#"
@@ -211,13 +216,13 @@ pub fn entry_to_method_type(entry: &Entry) -> String {
         }
 
         Entry::TupleStruct { doc, name, fields } => {
-            let docs = doc_to_ts_doc(doc, None);
+            let docs = doc_to_ts_doc(doc, None, 0);
             let fields = fields.iter().map(type_to_ts).join(",  ");
             format!("{docs}export type {name} = readonly [{fields}];")
         }
 
         Entry::Union { name, doc, cases } => {
-            let doc = doc_to_ts_doc(doc, None);
+            let doc = doc_to_ts_doc(doc, None, 0);
             let cases = cases.iter().map(case_to_ts).join(" | ");
 
             format!(
@@ -226,7 +231,7 @@ pub fn entry_to_method_type(entry: &Entry) -> String {
             )
         }
         Entry::Enum { doc, name, cases } => {
-            let doc = doc_to_ts_doc(doc, None);
+            let doc = doc_to_ts_doc(doc, None, 0);
             let cases = cases.iter().map(enum_case_to_ts).join("\n  ");
             let name = (name == "Error")
                 .then(|| format!("{name}s"))
@@ -239,16 +244,30 @@ pub fn entry_to_method_type(entry: &Entry) -> String {
             )
         }
         Entry::ErrorEnum { doc, cases, .. } => {
-            let doc = doc_to_ts_doc(doc, None);
+            let doc = doc_to_ts_doc(doc, None, 0);
             let cases = cases
                 .iter()
-                .map(|c| format!("{}: {{message:\"{}\"}}", c.value, c.doc))
-                .join(",\n  ");
-            format!(
-                r#"{doc}export const Errors = {{
-  {cases}
-}}"#
-            )
+                .enumerate()
+                .map(|(i, c)| {
+                    if c.doc.is_empty() {
+                        format!(
+                            "{}  {}: {{message:\"{}\"}}",
+                            if i == 0 { "" } else { "\n" },
+                            c.value,
+                            c.name
+                        )
+                    } else {
+                        format!(
+                            "{}{}  {}: {{message:\"{}\"}}",
+                            if i == 0 { "" } else { "\n" },
+                            doc_to_ts_doc(&c.doc, None, 1),
+                            c.value,
+                            c.name
+                        )
+                    }
+                })
+                .join(",\n");
+            format!("{doc}export const Errors = {{\n{cases}\n}}")
         }
     }
 }
@@ -270,7 +289,7 @@ fn case_to_ts(case: &types::UnionCase) -> String {
 
 fn field_to_ts(field: &types::StructField) -> String {
     let types::StructField { doc, name, value } = field;
-    let doc = doc_to_ts_doc(doc, None);
+    let doc = doc_to_ts_doc(doc, None, 0);
     let type_ = type_to_ts(value);
     format!("{doc}{name}: {type_};")
 }
