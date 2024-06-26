@@ -42,6 +42,36 @@ fn set_and_remove_network() {
     });
 }
 
+#[test]
+fn use_default_futurenet() {
+    TestEnv::with_default(|sandbox| {
+        sandbox
+            .new_assert_cmd("keys")
+            .args(["generate", "alice", "--network", "futurenet"])
+            .assert()
+            .success();
+        let dir = sandbox.dir().join(".soroban").join("network");
+        let mut read_dir = std::fs::read_dir(dir).unwrap();
+        let file = read_dir.next().unwrap().unwrap();
+        assert_eq!(file.file_name().to_str().unwrap(), "futurenet.toml");
+    });
+}
+
+#[test]
+fn use_default_testnet() {
+    TestEnv::with_default(|sandbox| {
+        sandbox
+            .new_assert_cmd("keys")
+            .args(["generate", "alice", "--network", "testnet"])
+            .assert()
+            .success();
+        let dir = sandbox.dir().join(".soroban").join("network");
+        let mut read_dir = std::fs::read_dir(dir).unwrap();
+        let file = read_dir.next().unwrap().unwrap();
+        assert_eq!(file.file_name().to_str().unwrap(), "testnet.toml");
+    });
+}
+
 fn add_network(sandbox: &TestEnv, name: &str) {
     sandbox
         .new_assert_cmd("network")

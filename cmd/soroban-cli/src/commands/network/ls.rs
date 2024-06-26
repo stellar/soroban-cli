@@ -1,7 +1,6 @@
 use clap::command;
 
 use super::locator;
-use crate::commands::config::locator::Location;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -36,7 +35,7 @@ impl Cmd {
             .list_networks_long()?
             .iter()
             .filter_map(|(name, network, location)| {
-                (!self.config_locator.global || matches!(location, Location::Global(_)))
+                (!self.config_locator.global || location == "Global")
                     .then(|| Some(format!("{location}\nName: {name}\n{network:#?}\n")))?
             })
             .collect())
