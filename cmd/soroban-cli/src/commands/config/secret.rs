@@ -4,7 +4,7 @@ use std::{io::Write, str::FromStr};
 use stellar_strkey::ed25519::{PrivateKey, PublicKey};
 
 use crate::{
-    signer::{self, LocalKey, Stellar},
+    signer::{self, native, Ledger, LocalKey, Stellar},
     utils,
 };
 
@@ -79,6 +79,7 @@ impl Args {
 pub enum SignerKind {
     SecretKey { secret_key: String },
     SeedPhrase { seed_phrase: String },
+    Ledger,
 }
 
 impl FromStr for SignerKind {
@@ -93,6 +94,8 @@ impl FromStr for SignerKind {
             Ok(SignerKind::SeedPhrase {
                 seed_phrase: s.to_string(),
             })
+        } else if s == "ledger" {
+            Ok(SignerKind::Ledger)
         } else {
             Err(Error::InvalidAddress(s.to_string()))
         }
@@ -117,6 +120,7 @@ impl SignerKind {
                     .private()
                     .0,
             )?,
+            SignerKind::Ledger => panic!("Ledger does not reveal secret key"),
         })
     }
 
@@ -130,6 +134,13 @@ impl SignerKind {
             SignerKind::SecretKey { .. } | SignerKind::SeedPhrase { .. } => Ok(
                 StellarSigner::Local(LocalKey::new(self.key_pair(index)?, prompt)),
             ),
+            SignerKind::Ledger => {
+                let hd_path: u32 = index
+                    .unwrap_or_default()
+                    .try_into()
+                    .expect("uszie bigger than u32");
+                Ok(StellarSigner::Ledger(native(hd_path)?))
+            }
         }
     }
 
@@ -155,6 +166,7 @@ impl SignerKind {
 
 pub enum StellarSigner {
     Local(LocalKey),
+    Ledger(Ledger<stellar_ledger::TransportNativeHID>),
 }
 
 #[async_trait::async_trait]
@@ -162,12 +174,14 @@ impl Stellar for StellarSigner {
     async fn get_public_key(&self) -> Result<stellar_strkey::ed25519::PublicKey, signer::Error> {
         match self {
             StellarSigner::Local(signer) => signer.get_public_key().await,
+            StellarSigner::Ledger(signer) => signer.get_public_key().await,
         }
     }
 
     async fn sign_blob(&self, blob: &[u8]) -> Result<Vec<u8>, signer::Error> {
         match self {
             StellarSigner::Local(signer) => signer.sign_blob(blob).await,
+            StellarSigner::Ledger(signer) => signer.sign_blob(blob).await,
         }
     }
 }

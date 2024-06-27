@@ -10,6 +10,7 @@ use crate::xdr::{
     TransactionSignaturePayload, TransactionSignaturePayloadTaggedTransaction,
     TransactionV1Envelope, Uint256, WriteXdr,
 };
+use stellar_ledger::{Exchange, LedgerSigner};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -19,6 +20,8 @@ pub enum Error {
     Ed25519(#[from] ed25519_dalek::SignatureError),
     #[error("Missing signing key for account {address}")]
     MissingSignerForAddress { address: String },
+    #[error(transparent)]
+    Ledger(#[from] stellar_ledger::Error),
     #[error(transparent)]
     Xdr(#[from] xdr::Error),
     #[error("User cancelled signing, perhaps need to remove --check")]
@@ -246,6 +249,33 @@ impl Stellar for LocalKey {
         Ok(stellar_strkey::ed25519::PublicKey(
             self.key.verifying_key().to_bytes(),
         ))
+    }
+}
+
+pub struct Ledger<T: Exchange> {
+    index: u32,
+    signer: LedgerSigner<T>,
+}
+
+pub fn native(index: u32) -> Result<Ledger<stellar_ledger::TransportNativeHID>, Error> {
+    let signer = stellar_ledger::native()?;
+    Ok(Ledger { index, signer })
+}
+
+#[async_trait::async_trait]
+impl<T> Stellar for Ledger<T>
+where
+    T: Exchange,
+{
+    async fn get_public_key(&self) -> Result<stellar_strkey::ed25519::PublicKey, Error> {
+        Ok(self
+            .signer
+            .get_public_key_with_display_flag(self.index, false)
+            .await?)
+    }
+
+    async fn sign_blob(&self, blob: &[u8]) -> Result<Vec<u8>, Error> {
+        Ok(self.signer.sign_data(&self.index.into(), blob).await?)
     }
 }
 

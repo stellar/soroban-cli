@@ -50,6 +50,7 @@ soroban-ledger-snapshot = { workspace = true }
 stellar-strkey = { workspace = true }
 soroban-sdk = { workspace = true }
 soroban-rpc = { workspace = true }
+stellar-ledger = { workspace = true }
 
 clap = { workspace = true, features = [
     "derive",

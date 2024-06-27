@@ -1,8 +1,9 @@
 use hd_path::HdPath;
-use ledger_transport::{APDUCommand, Exchange};
+use ledger_transport::APDUCommand;
+pub use ledger_transport_hid::TransportNativeHID;
 use ledger_transport_hid::{
     hidapi::{HidApi, HidError},
-    LedgerHIDError, TransportNativeHID,
+    LedgerHIDError,
 };
 
 use soroban_env_host::xdr::{Hash, Transaction};
@@ -15,6 +16,8 @@ use stellar_xdr::curr::{
 
 pub use crate::signer::Blob;
 pub mod hd_path;
+pub use ledger_transport::Exchange;
+
 mod signer;
 
 // this is from https://github.com/LedgerHQ/ledger-live/blob/36cfbf3fa3300fd99bcee2ab72e1fd8f280e6280/libs/ledgerjs/packages/hw-app-str/src/Str.ts#L181
@@ -80,6 +83,11 @@ pub struct LedgerSigner<T: Exchange> {
 unsafe impl<T> Send for LedgerSigner<T> where T: Exchange {}
 unsafe impl<T> Sync for LedgerSigner<T> where T: Exchange {}
 
+/// Returns a new `LedgerSigner` with a native HID transport, e.i. the transport is connected to the Ledger device
+///
+/// # Errors
+///
+/// Returns an error if there is an issue with connecting with the device
 pub fn native() -> Result<LedgerSigner<TransportNativeHID>, Error> {
     Ok(LedgerSigner {
         transport: get_transport()?,
@@ -93,11 +101,7 @@ where
     pub fn new(transport: T) -> Self {
         Self { transport }
     }
-    pub fn native() -> Result<LedgerSigner<TransportNativeHID>, Error> {
-        Ok(LedgerSigner {
-            transport: get_transport()?,
-        })
-    }
+
     /// Get the device app's configuration
     /// # Errors
     /// Returns an error if there is an issue with connecting with the device or getting the config from the device
@@ -141,7 +145,7 @@ where
         };
         let mut signature_payload_as_bytes = signature_payload.to_xdr(Limits::none())?;
 
-        let mut hd_path_to_bytes = hd_path.into().to_vec()?;
+        let mut hd_path_to_bytes = hd_path.into().to_vec();
 
         let capacity = 1 + hd_path_to_bytes.len() + signature_payload_as_bytes.len();
         let mut data: Vec<u8> = Vec::with_capacity(capacity);
@@ -182,7 +186,9 @@ where
     }
 
     /// The `display_and_confirm` bool determines if the Ledger will display the public key on its screen and requires user approval to share
-    async fn get_public_key_with_display_flag(
+    /// # Errors
+    /// Returns an error if there is an issue with connecting with the device or getting the public key from the device
+    pub async fn get_public_key_with_display_flag(
         &self,
         hd_path: impl Into<HdPath>,
         display_and_confirm: bool,
@@ -191,7 +197,7 @@ where
         // the first element of the data should be the number of elements in the path
         let hd_path = hd_path.into();
         let hd_path_elements_count = hd_path.depth();
-        let mut hd_path_to_bytes = hd_path.to_vec()?;
+        let mut hd_path_to_bytes = hd_path.to_vec();
         hd_path_to_bytes.insert(0, hd_path_elements_count);
 
         let p2 = if display_and_confirm {
@@ -241,6 +247,30 @@ where
             )),
         }
     }
+
+    /// Sign a blob of data with the account on the Ledger device
+    /// # Errors
+    /// Returns an error if there is an issue with connecting with the device or signing the given tx on the device
+    pub async fn sign_data(&self, index: &HdPath, blob: &[u8]) -> Result<Vec<u8>, Error> {
+        let mut hd_path_to_bytes = index.to_vec();
+
+        let capacity = 1 + hd_path_to_bytes.len() + blob.len();
+        let mut data: Vec<u8> = Vec::with_capacity(capacity);
+
+        data.insert(0, HD_PATH_ELEMENTS_COUNT);
+        data.append(&mut hd_path_to_bytes);
+        data.extend_from_slice(blob);
+
+        let command = APDUCommand {
+            cla: CLA,
+            ins: SIGN_TX_HASH,
+            p1: P1_SIGN_TX_HASH,
+            p2: P2_SIGN_TX_HASH,
+            data,
+        };
+
+        self.send_command_to_ledger(command).await
+    }
 }
 
 #[async_trait::async_trait]
@@ -265,24 +295,7 @@ where
     /// # Errors
     /// Returns an error if there is an issue with connecting with the device or signing the given tx on the device. Or, if the device has not enabled hash signing
     async fn sign_blob(&self, index: &Self::Key, blob: &[u8]) -> Result<Vec<u8>, Error> {
-        let mut hd_path_to_bytes = index.to_vec()?;
-
-        let capacity = 1 + hd_path_to_bytes.len() + blob.len();
-        let mut data: Vec<u8> = Vec::with_capacity(capacity);
-
-        data.insert(0, HD_PATH_ELEMENTS_COUNT);
-        data.append(&mut hd_path_to_bytes);
-        data.extend_from_slice(blob);
-
-        let command = APDUCommand {
-            cla: CLA,
-            ins: SIGN_TX_HASH,
-            p1: P1_SIGN_TX_HASH,
-            p2: P2_SIGN_TX_HASH,
-            data,
-        };
-
-        self.send_command_to_ledger(command).await
+        self.sign_data(index, blob).await
     }
 }
 

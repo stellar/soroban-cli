@@ -1,9 +1,8 @@
-use crate::Error;
-
 #[derive(Clone, Copy)]
 pub struct HdPath(pub u32);
 
 impl HdPath {
+    #[must_use]
     pub fn depth(&self) -> u8 {
         let path: slip10::BIP32Path = self.into();
         path.depth()
@@ -23,7 +22,8 @@ impl From<&u32> for HdPath {
 }
 
 impl HdPath {
-    pub fn to_vec(&self) -> Result<Vec<u8>, Error> {
+    #[must_use]
+    pub fn to_vec(&self) -> Vec<u8> {
         hd_path_to_bytes(&self.into())
     }
 }
@@ -35,16 +35,11 @@ impl From<&HdPath> for slip10::BIP32Path {
     }
 }
 
-fn hd_path_to_bytes(hd_path: &slip10::BIP32Path) -> Result<Vec<u8>, Error> {
+fn hd_path_to_bytes(hd_path: &slip10::BIP32Path) -> Vec<u8> {
     let hd_path_indices = 0..hd_path.depth();
-    let result = hd_path_indices
+    // Unsafe unwrap is safe because the depth is the length of interneal vector
+    hd_path_indices
         .into_iter()
-        .map(|index| {
-            Ok(hd_path
-                .index(index)
-                .ok_or_else(|| Error::Bip32PathError(format!("{hd_path}")))?
-                .to_be_bytes())
-        })
-        .collect::<Result<Vec<_>, Error>>()?;
-    Ok(result.into_iter().flatten().collect())
+        .flat_map(|index| unsafe { hd_path.index(index).unwrap_unchecked().to_be_bytes() })
+        .collect()
 }
