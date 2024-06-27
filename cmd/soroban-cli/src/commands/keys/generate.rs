@@ -1,6 +1,6 @@
 use clap::{arg, command};
 
-use crate::commands::{config::locator::KeyName, network};
+use crate::commands::{config::locator::NewKeyName, network};
 
 use super::super::config::{
     locator,
@@ -21,7 +21,7 @@ pub enum Error {
 #[group(skip)]
 pub struct Cmd {
     /// Name of identity
-    pub name: KeyName,
+    pub name: NewKeyName,
     /// Do not fund address
     #[arg(long)]
     pub no_fund: bool,

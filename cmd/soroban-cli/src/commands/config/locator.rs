@@ -103,6 +103,28 @@ impl Display for Location {
 }
 
 #[derive(Clone, Debug)]
+pub struct NewKeyName(KeyName);
+
+impl std::ops::Deref for NewKeyName {
+    type Target = KeyName;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl FromStr for NewKeyName {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "ledger" {
+            return Err(Error::LedgerKeyName);
+        }
+        Ok(NewKeyName(s.parse()?))
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct KeyName(String);
 
 impl std::ops::Deref for KeyName {
@@ -117,9 +139,6 @@ impl FromStr for KeyName {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "ledger" {
-            return Err(Error::LedgerKeyName);
-        }
         Ok(KeyName(s.to_string()))
     }
 }
