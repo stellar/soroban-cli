@@ -5,7 +5,17 @@ use crate::commands::network::container::shared::{
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Failed to stop container: {0}")]
-    StopContainerError(#[from] ConnectionError),
+    StopConnectionContainerError(#[from] ConnectionError),
+
+    #[error("Container {container_name} not found")]
+    ContainerNotFoundError {
+        container_name: String,
+        #[source]
+        source: bollard::errors::Error,
+    },
+
+    #[error("Failed to stop container: {0}")]
+    StopContainerError(#[from] bollard::errors::Error),
 }
 
 #[derive(Debug, clap::Parser, Clone)]
@@ -22,7 +32,20 @@ impl Cmd {
         let container_name = format!("stellar-{}", self.network);
         let docker = connect_to_docker(&self.docker_host).await?;
         println!("ℹ️  Stopping container: {container_name}");
-        docker.stop_container(&container_name, None).await.unwrap();
+        docker
+            .stop_container(&container_name, None)
+            .await
+            .map_err(|e| {
+                let msg = e.to_string();
+                if msg.contains("No such container") {
+                    Error::ContainerNotFoundError {
+                        container_name: container_name.clone(),
+                        source: e,
+                    }
+                } else {
+                    Error::StopContainerError(e)
+                }
+            })?;
         println!("✅ Container stopped: {container_name}");
         Ok(())
     }
