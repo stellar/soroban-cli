@@ -107,6 +107,23 @@ async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
             None::<StartContainerOptions<String>>,
         )
         .await?;
+
+    let logs_stream = &mut docker.logs(
+        &create_container_response.id,
+        Some(bollard::container::LogsOptions {
+            follow: true,
+            stdout: true,
+            stderr: true,
+            tail: "all",
+            ..Default::default()
+        }),
+    );
+
+    for _ in 0..25 {
+        if let Some(log) = logs_stream.try_next().await? {
+            print!("    {log}");
+        }
+    }
     println!("✅ Container started: {container_name}");
     print_log_message(cmd);
     print_stop_message(cmd);
