@@ -35,7 +35,7 @@ impl Cmd {
         let container_name =
             get_container_name(self.container_args.container_name.clone(), self.network);
         let docker = connect_to_docker(&self.container_args.docker_host).await?;
-        println!("ℹ️  Stopping container: {container_name}");
+        println!("ℹ️ Stopping container: {container_name}");
         docker
             .stop_container(&container_name, None)
             .await

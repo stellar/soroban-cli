@@ -113,50 +113,34 @@ async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
     Ok(())
 }
 
-fn print_stop_message(cmd: &Cmd) {
-    let stop_message = format!(
-        "ℹ️  To stop this container run: stellar network container stop {arg} {additional_flags}",
-        arg = if cmd.container_args.container_name.is_some() {
-            format!(
-                "--container-name {}",
-                cmd.container_args.container_name.clone().unwrap()
-            )
-        } else {
-            cmd.network.to_string()
-        },
-        additional_flags = if cmd.container_args.docker_host.is_some() {
-            format!(
-                "--docker-host {}",
-                cmd.container_args.docker_host.as_ref().unwrap()
-            )
-        } else {
-            String::new()
-        }
-    );
-    println!("{stop_message}");
-}
-
 fn print_log_message(cmd: &Cmd) {
     let log_message = format!(
-        "ℹ️  To see the logs for this container run: stellar network container logs {arg} {additional_flags}",
-        arg = if cmd.container_args.container_name.is_some() {
-            format!(
-                "--container-name {}",
-                cmd.container_args.container_name.clone().unwrap()
-            )
-        } else {
-            cmd.network.to_string()
-        },
-        additional_flags = if cmd.container_args.docker_host.is_some() {
-            format!(
-                "--docker-host {}",
-                cmd.container_args.docker_host.as_ref().unwrap()
-            )
-        } else {
-            String::new()
-        }
+        "ℹ️ To see the logs for this container run: stellar network container logs {arg} {additional_flags}",
+        arg = cmd.container_args.container_name.as_ref().map_or_else(
+            || cmd.network.to_string(),
+            |container_name| format!("--container-name {}", container_name)
+        ),
+        additional_flags = cmd.container_args.docker_host.as_ref().map_or_else(
+            || String::new(),
+            |docker_host| format!("--docker-host {}", docker_host)
+        )
     );
     println!("{log_message}");
+}
+
+fn print_stop_message(cmd: &Cmd) {
+    let stop_message = format!(
+        "ℹ️ To stop this container run: stellar network container stop {arg} {additional_flags}",
+        arg = cmd.container_args.container_name.as_ref().map_or_else(
+            || cmd.network.to_string(),
+            |container_name| format!("--container-name {}", container_name)
+        ),
+        additional_flags = cmd.container_args.docker_host.as_ref().map_or_else(
+            || String::new(),
+            |docker_host| format!("--docker-host {}", docker_host)
+        )
+    );
+    println!("{stop_message}");
 }
 
 fn get_container_args(cmd: &Cmd) -> Vec<String> {
