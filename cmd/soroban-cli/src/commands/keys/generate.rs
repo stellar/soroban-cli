@@ -1,10 +1,10 @@
 use clap::{arg, command};
 
-use crate::commands::network;
+use crate::commands::{config::locator::KeyName, network};
 
 use super::super::config::{
     locator,
-    secret::{self, Secret},
+    secret::{self, SignerKind},
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -21,7 +21,7 @@ pub enum Error {
 #[group(skip)]
 pub struct Cmd {
     /// Name of identity
-    pub name: String,
+    pub name: KeyName,
     /// Do not fund address
     #[arg(long)]
     pub no_fund: bool,
@@ -53,9 +53,9 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self) -> Result<(), Error> {
         let seed_phrase = if self.default_seed {
-            Secret::test_seed_phrase()
+            SignerKind::test_seed_phrase()
         } else {
-            Secret::from_seed(self.seed.as_deref())
+            SignerKind::from_seed(self.seed.as_deref())
         }?;
         let secret = if self.as_secret {
             seed_phrase.private_key(self.hd_path)?.into()
@@ -64,7 +64,7 @@ impl Cmd {
         };
         self.config_locator.write_identity(&self.name, &secret)?;
         if !self.no_fund {
-            let addr = secret.public_key(self.hd_path)?;
+            let addr = secret.public_key(self.hd_path).await?;
             let network = self.network.get(&self.config_locator)?;
             network
                 .fund_address(&addr)

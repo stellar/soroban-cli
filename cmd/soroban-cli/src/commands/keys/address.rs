@@ -1,7 +1,9 @@
-use crate::commands::config::secret;
-
-use super::super::config::locator;
 use clap::arg;
+
+use super::super::config::{
+    locator::{self, KeyName},
+    secret,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -19,7 +21,7 @@ pub enum Error {
 #[group(skip)]
 pub struct Cmd {
     /// Name of identity to lookup, default test identity used if not provided
-    pub name: String,
+    pub name: KeyName,
 
     /// If identity is a seed phrase use this hd path, default is 0
     #[arg(long)]
@@ -30,25 +32,16 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub fn run(&self) -> Result<(), Error> {
-        println!("{}", self.public_key()?);
+    pub async fn run(&self) -> Result<(), Error> {
+        println!("{}", self.public_key().await?);
         Ok(())
     }
 
-    pub fn private_key(&self) -> Result<ed25519_dalek::SigningKey, Error> {
+    pub async fn public_key(&self) -> Result<stellar_strkey::ed25519::PublicKey, Error> {
         Ok(self
             .locator
-            .read_identity(&self.name)?
-            .key_pair(self.hd_path)?)
-    }
-
-    pub fn public_key(&self) -> Result<stellar_strkey::ed25519::PublicKey, Error> {
-        if let Ok(key) = stellar_strkey::ed25519::PublicKey::from_string(&self.name) {
-            Ok(key)
-        } else {
-            Ok(stellar_strkey::ed25519::PublicKey::from_payload(
-                self.private_key()?.verifying_key().as_bytes(),
-            )?)
-        }
+            .account(&self.name)?
+            .public_key(self.hd_path)
+            .await?)
     }
 }

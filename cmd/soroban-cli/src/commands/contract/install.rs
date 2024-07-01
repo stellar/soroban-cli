@@ -171,7 +171,7 @@ impl NetworkRunnable for Cmd {
             return Ok(TxnResult::Txn(txn));
         }
         let txn_resp = client
-            .send_transaction_polling(&self.config.sign_with_local_key(txn).await?)
+            .send_transaction_polling(&self.config.sign(txn).await?)
             .await?;
         if args.map_or(true, |a| !a.no_cache) {
             data::write(txn_resp.clone().try_into().unwrap(), &network.rpc_uri()?)?;

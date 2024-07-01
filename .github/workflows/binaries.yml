@@ -39,6 +39,9 @@ jobs:
     - run: rustup target add ${{ matrix.sys.target }}
     - if: matrix.sys.target == 'aarch64-unknown-linux-gnu'
       run: sudo apt-get update && sudo apt-get -y install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+    - if: matrix.sys.target == 'aarch64-unknown-linux-gnu'
+      run: |
+        sudo apt install -y libudev-dev
     - name: Setup vars
       run: |
         version="$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "stellar-cli") | .version')"

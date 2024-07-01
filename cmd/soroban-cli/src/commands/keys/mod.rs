@@ -51,7 +51,7 @@ impl Cmd {
     pub async fn run(&self) -> Result<(), Error> {
         match self {
             Cmd::Add(cmd) => cmd.run()?,
-            Cmd::Address(cmd) => cmd.run()?,
+            Cmd::Address(cmd) => cmd.run().await?,
             Cmd::Fund(cmd) => cmd.run().await?,
             Cmd::Generate(cmd) => cmd.run().await?,
             Cmd::Ls(cmd) => cmd.run()?,

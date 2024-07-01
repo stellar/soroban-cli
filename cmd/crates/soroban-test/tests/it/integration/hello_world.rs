@@ -73,8 +73,8 @@ async fn invoke() {
         .stdout_as_str();
     let dir = sandbox.dir();
     let seed_phrase = std::fs::read_to_string(dir.join(".soroban/identity/test.toml")).unwrap();
-    let s = toml::from_str::<secret::Secret>(&seed_phrase).unwrap();
-    let secret::Secret::SeedPhrase { seed_phrase } = s else {
+    let s = toml::from_str::<secret::SignerKind>(&seed_phrase).unwrap();
+    let secret::SignerKind::SeedPhrase { seed_phrase } = s else {
         panic!("Expected seed phrase")
     };
     let id = &deploy_hello(sandbox).await;
@@ -105,8 +105,8 @@ async fn invoke() {
     };
     config_locator
         .write_identity(
-            "testone",
-            &secret::Secret::SecretKey {
+            &"testone".parse().unwrap(),
+            &secret::SignerKind::SecretKey {
                 secret_key: secret_key_1.clone(),
             },
         )
@@ -222,6 +222,7 @@ async fn invoke_auth_with_different_test_account_fail(sandbox: &TestEnv, id: &st
             "--hd-path=0",
             "--id",
             id,
+            "--fee=1000000",
             "--",
             "auth",
             &format!("--addr={addr}"),
@@ -230,8 +231,8 @@ async fn invoke_auth_with_different_test_account_fail(sandbox: &TestEnv, id: &st
         .await;
     let e = res.unwrap_err();
     assert!(
-        matches!(e, contract::invoke::Error::Config(_)),
-        "Expected config error got {e:?}"
+        matches!(e, contract::invoke::Error::Rpc(_)),
+        "Expected rpc error got {e:?}"
     );
 }
 

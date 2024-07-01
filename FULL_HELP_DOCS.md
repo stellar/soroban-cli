@@ -58,6 +58,8 @@ This document contains the help content for the `stellar` command-line program.
 * [`stellar version`↴](#stellar-version)
 * [`stellar tx`↴](#stellar-tx)
 * [`stellar tx simulate`↴](#stellar-tx-simulate)
+* [`stellar tx sign`↴](#stellar-tx-sign)
+* [`stellar tx send`↴](#stellar-tx-send)
 * [`stellar cache`↴](#stellar-cache)
 * [`stellar cache clean`↴](#stellar-cache-clean)
 * [`stellar cache path`↴](#stellar-cache-path)
@@ -217,6 +219,10 @@ Get Id of builtin Soroban Asset Contract. Deprecated, use `stellar contract id a
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 
 
 
@@ -239,6 +245,10 @@ Deploy builtin Soroban Asset Contract
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 * `--fee <FEE>` — fee amount for transaction, in stroops. 1 stroop = 0.0000001 xlm
 
   Default value: `100`
@@ -398,6 +408,10 @@ If no keys are specified the contract itself is extended.
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 * `--fee <FEE>` — fee amount for transaction, in stroops. 1 stroop = 0.0000001 xlm
 
   Default value: `100`
@@ -438,6 +452,10 @@ Deploy a wasm contract
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 * `--fee <FEE>` — fee amount for transaction, in stroops. 1 stroop = 0.0000001 xlm
 
   Default value: `100`
@@ -517,6 +535,10 @@ Deploy builtin Soroban Asset Contract
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 
 
 
@@ -539,6 +561,10 @@ Deploy normal Wasm Contract
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 
 
 
@@ -611,6 +637,10 @@ Install a WASM file to the ledger without creating a contract instance
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 * `--fee <FEE>` — fee amount for transaction, in stroops. 1 stroop = 0.0000001 xlm
 
   Default value: `100`
@@ -668,6 +698,10 @@ stellar contract invoke ... -- --help
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 * `--fee <FEE>` — fee amount for transaction, in stroops. 1 stroop = 0.0000001 xlm
 
   Default value: `100`
@@ -745,6 +779,10 @@ Print the current value of a contract-data ledger entry
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 
 
 
@@ -788,6 +826,10 @@ If no keys are specificed the contract itself is restored.
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 * `--fee <FEE>` — fee amount for transaction, in stroops. 1 stroop = 0.0000001 xlm
 
   Default value: `100`
@@ -1436,6 +1478,8 @@ Sign, Simulate, and Send transactions
 ###### **Subcommands:**
 
 * `simulate` — Simulate a transaction envelope from stdin
+* `sign` — Sign a transaction with a ledger or local key
+* `send` — Send a transaction envelope to the network
 
 
 
@@ -1457,6 +1501,60 @@ Simulate a transaction envelope from stdin
   Possible values: `true`, `false`
 
 * `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
+
+
+
+## `stellar tx sign`
+
+Sign a transaction with a ledger or local key
+
+**Usage:** `stellar tx sign [OPTIONS] --source-account <SOURCE_ACCOUNT>`
+
+###### **Options:**
+
+* `--rpc-url <RPC_URL>` — RPC server endpoint
+* `--network-passphrase <NETWORK_PASSPHRASE>` — Network passphrase to sign the transaction sent to the rpc server
+* `--network <NETWORK>` — Name of network to use from config
+* `--source-account <SOURCE_ACCOUNT>` — Account that signs the final transaction. Alias `source`. Can be an identity (--source alice), a secret key (--source SC36…), or a seed phrase (--source "kite urban…")
+* `--hd-path <HD_PATH>` — If using a seed phrase, which hierarchical deterministic path to use, e.g. `m/44'/148'/{hd_path}`. Example: `--hd-path 1`. Default: `0`
+* `--global` — Use global config
+
+  Possible values: `true`, `false`
+
+* `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
+
+
+
+## `stellar tx send`
+
+Send a transaction envelope to the network
+
+**Usage:** `stellar tx send [OPTIONS] --source-account <SOURCE_ACCOUNT>`
+
+###### **Options:**
+
+* `--rpc-url <RPC_URL>` — RPC server endpoint
+* `--network-passphrase <NETWORK_PASSPHRASE>` — Network passphrase to sign the transaction sent to the rpc server
+* `--network <NETWORK>` — Name of network to use from config
+* `--source-account <SOURCE_ACCOUNT>` — Account that signs the final transaction. Alias `source`. Can be an identity (--source alice), a secret key (--source SC36…), or a seed phrase (--source "kite urban…")
+* `--hd-path <HD_PATH>` — If using a seed phrase, which hierarchical deterministic path to use, e.g. `m/44'/148'/{hd_path}`. Example: `--hd-path 1`. Default: `0`
+* `--global` — Use global config
+
+  Possible values: `true`, `false`
+
+* `--config-dir <CONFIG_DIR>` — Location of config directory, default is "."
+* `--check` — Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+
+  Possible values: `true`, `false`
+
 
 
 

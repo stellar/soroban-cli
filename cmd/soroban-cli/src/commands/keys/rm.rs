@@ -1,6 +1,6 @@
 use clap::command;
 
-use super::super::config::locator;
+use super::super::config::locator::{self, KeyName};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -12,7 +12,7 @@ pub enum Error {
 #[group(skip)]
 pub struct Cmd {
     /// Identity to remove
-    pub name: String,
+    pub name: KeyName,
 
     #[command(flatten)]
     pub config: locator::Args,
