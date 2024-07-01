@@ -8,8 +8,10 @@ use bollard::{
 use futures_util::TryStreamExt;
 
 use crate::commands::network::container::shared::{
-    connect_to_docker, Error as ConnectionError, Network, DOCKER_HOST_HELP,
+    connect_to_docker, Error as ConnectionError, Network,
 };
+
+use super::shared::ContainerArgs;
 
 const DEFAULT_PORT_MAPPING: &str = "8000:8000";
 const DOCKER_IMAGE: &str = "docker.io/stellar/quickstart";
@@ -25,11 +27,11 @@ pub enum Error {
 
 #[derive(Debug, clap::Parser, Clone)]
 pub struct Cmd {
+    #[command(flatten)]
+    pub container_args: ContainerArgs,
+
     /// Network to start
     pub network: Network,
-
-    #[arg(short = 'd', long, help = DOCKER_HOST_HELP, env = "DOCKER_HOST")]
-    pub docker_host: Option<String>,
 
     /// Optional argument to specify the limits for the local network only
     #[arg(short = 'l', long)]
@@ -56,7 +58,7 @@ impl Cmd {
 }
 
 async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
-    let docker = connect_to_docker(&cmd.docker_host).await?;
+    let docker = connect_to_docker(&cmd.container_args.docker_host).await?;
 
     let image = get_image_name(cmd);
     docker
@@ -108,8 +110,8 @@ async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
     let stop_message = format!(
         "ℹ️  To stop this container run: stellar network container stop {network} {additional_flags}",
         network = &cmd.network,
-        additional_flags = if cmd.docker_host.is_some() {
-            format!("--docker-host {}", cmd.docker_host.as_ref().unwrap())
+        additional_flags = if cmd.container_args.docker_host.is_some() {
+            format!("--docker-host {}", cmd.container_args.docker_host.as_ref().unwrap())
         } else {
             String::new()
         }

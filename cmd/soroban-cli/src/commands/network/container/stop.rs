@@ -1,6 +1,8 @@
 use crate::commands::network::container::shared::{
-    connect_to_docker, Error as ConnectionError, Network, DOCKER_HOST_HELP,
+    connect_to_docker, Error as ConnectionError, Network,
 };
+
+use super::shared::ContainerArgs;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -20,17 +22,17 @@ pub enum Error {
 
 #[derive(Debug, clap::Parser, Clone)]
 pub struct Cmd {
+    #[command(flatten)]
+    pub container_args: ContainerArgs,
+
     /// Network to stop
     pub network: Network,
-
-    #[arg(short = 'd', long, help = DOCKER_HOST_HELP, env = "DOCKER_HOST")]
-    pub docker_host: Option<String>,
 }
 
 impl Cmd {
     pub async fn run(&self) -> Result<(), Error> {
         let container_name = format!("stellar-{}", self.network);
-        let docker = connect_to_docker(&self.docker_host).await?;
+        let docker = connect_to_docker(&self.container_args.docker_host).await?;
         println!("ℹ️  Stopping container: {container_name}");
         docker
             .stop_container(&container_name, None)
