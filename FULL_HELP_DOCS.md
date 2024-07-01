@@ -460,7 +460,7 @@ Deploy a wasm contract
 
   Possible values: `true`, `false`
 
-* `--alias <ALIAS>` — The alias that will be used to save the contract's id
+* `--alias <ALIAS>` — The alias that will be used to save the contract's id. Whenever used, `--alias` will always overwrite the existing contract id configuration without asking for confirmation
 
 
 

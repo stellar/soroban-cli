@@ -56,6 +56,8 @@ pub struct Cmd {
     /// Whether to ignore safety checks when deploying contracts
     pub ignore_checks: bool,
     /// The alias that will be used to save the contract's id.
+    /// Whenever used, `--alias` will always overwrite the existing contract id
+    /// configuration without asking for confirmation.
     #[arg(long, value_parser = clap::builder::ValueParser::new(alias_validator))]
     pub alias: Option<String>,
 }

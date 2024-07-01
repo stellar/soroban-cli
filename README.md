@@ -24,6 +24,12 @@ Install with Homebrew:
 brew install stellar/tap/stellar-cli
 ```
 
+## Install Experimental Features
+To use the potentially unreleased bleeding edge CLI functionalities, install from git:
+```
+cargo install --locked stellar-cli --features opt --git git@github.com:stellar/stellar-cli.git
+```
+
 ## Setup Autocomplete
 ```
 stellar completion --shell <SHELL>
@@ -50,4 +56,5 @@ For upcoming features, please see the [project board](https://github.com/orgs/st
 Find issues to contribute to [here](https://github.com/stellar/stellar-cli/contribute) and review [CONTRIBUTING.md](/CONTRIBUTING.md).
 
 Developer Docs: https://developers.stellar.org/docs
+
 Developer Docs CLI Examples: https://developers.stellar.org/docs/smart-contracts/guides/cli
