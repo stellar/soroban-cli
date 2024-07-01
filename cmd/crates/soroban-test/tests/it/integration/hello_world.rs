@@ -250,6 +250,18 @@ fn contract_data_read_failure(sandbox: &TestEnv, id: &str) {
         );
 }
 
+fn contract_data_read_hash(sandbox: &TestEnv, hash: &str) {
+    sandbox
+        .new_assert_cmd("contract")
+        .arg("read")
+        .arg("--wasm-hash")
+        .arg(hash)
+        .arg("--durability=persistent")
+        .assert()
+        .success()
+        .stdout(predicates::str::starts_with("\"\"\""));
+}
+
 #[tokio::test]
 async fn contract_data_read() {
     const KEY: &str = "COUNTER";
@@ -295,6 +307,9 @@ async fn contract_data_read() {
         .assert()
         .success()
         .stdout(predicates::str::starts_with("COUNTER,2"));
+    let hello_world_hash = HELLO_WORLD.hash().expect("Failed to hash HELLO_WORLD");
+    let hello_world_hash_hex = hello_world_hash.to_string();
+    contract_data_read_hash(sandbox, &hello_world_hash_hex);
 }
 
 #[tokio::test]

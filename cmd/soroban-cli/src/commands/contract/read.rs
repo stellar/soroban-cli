@@ -11,6 +11,7 @@ use soroban_env_host::{
     },
     HostError,
 };
+use soroban_sdk::xdr::{ContractCodeEntry, LedgerKeyContractCode, ScBytes};
 
 use crate::{
     commands::{
@@ -87,7 +88,7 @@ pub enum Error {
     NoContractDataEntryFoundForContractID,
     #[error(transparent)]
     Key(#[from] key::Error),
-    #[error("Only contract data and code keys are allowed")]
+    #[error("Only contract code, data, and code keys are allowed")]
     OnlyDataAllowed,
     #[error(transparent)]
     Locator(#[from] locator::Error),
@@ -112,20 +113,28 @@ impl Cmd {
             last_modified_ledger,
         } in &entries.entries
         {
-            let (
-                LedgerKey::ContractData(LedgerKeyContractData { key, .. }),
-                LedgerEntryData::ContractData(ContractDataEntry { val, .. }),
-            ) = &(key, val)
-            else {
-                return Err(Error::OnlyDataAllowed);
+            let (key, val) = match (key, val) {
+                (
+                    LedgerKey::ContractData(LedgerKeyContractData { key, .. }),
+                    LedgerEntryData::ContractData(ContractDataEntry { val, .. }),
+                ) => (key.clone(), val.clone()),
+                (
+                    LedgerKey::ContractCode(LedgerKeyContractCode { hash }),
+                    LedgerEntryData::ContractCode(ContractCodeEntry { code, .. }),
+                ) => {
+                    let key = ScVal::Bytes(ScBytes(hash.0.to_vec().try_into().unwrap()));
+                    let val = ScVal::Bytes(ScBytes(code.clone()));
+                    (key, val)
+                }
+                _ => return Err(Error::OnlyDataAllowed),
             };
             let output = match self.output {
                 Output::String => [
-                    soroban_spec_tools::to_string(key).map_err(|e| Error::CannotPrintResult {
+                    soroban_spec_tools::to_string(&key).map_err(|e| Error::CannotPrintResult {
                         result: key.clone(),
                         error: e,
                     })?,
-                    soroban_spec_tools::to_string(val).map_err(|e| Error::CannotPrintResult {
+                    soroban_spec_tools::to_string(&val).map_err(|e| Error::CannotPrintResult {
                         result: val.clone(),
                         error: e,
                     })?,
