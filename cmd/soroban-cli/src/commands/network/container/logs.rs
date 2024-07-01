@@ -4,7 +4,7 @@ use crate::commands::network::container::shared::{
     connect_to_docker, Error as ConnectionError, Network,
 };
 
-use super::shared::ContainerArgs;
+use super::shared::{get_container_name, ContainerArgs};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -20,13 +20,15 @@ pub struct Cmd {
     #[command(flatten)]
     pub container_args: ContainerArgs,
 
-    /// Network to tail
-    pub network: Network,
+    /// Network container to tail (used in container name generation)
+    #[arg(required_unless_present = "container_name")]
+    pub network: Option<Network>,
 }
 
 impl Cmd {
     pub async fn run(&self) -> Result<(), Error> {
-        let container_name = format!("stellar-{}", self.network);
+        let container_name =
+            get_container_name(self.container_args.container_name.clone(), self.network);
         let docker = connect_to_docker(&self.container_args.docker_host).await?;
         let logs_stream = &mut docker.logs(
             &container_name,

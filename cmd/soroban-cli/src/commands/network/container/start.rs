@@ -8,7 +8,7 @@ use bollard::{
 use futures_util::TryStreamExt;
 
 use crate::commands::network::container::shared::{
-    connect_to_docker, Error as ConnectionError, Network,
+    connect_to_docker, get_container_name, Error as ConnectionError, Network,
 };
 
 use super::shared::ContainerArgs;
@@ -89,7 +89,8 @@ async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
         ..Default::default()
     };
 
-    let container_name = format!("stellar-{}", cmd.network);
+    let container_name =
+        get_container_name(cmd.container_args.container_name.clone(), Some(cmd.network));
     let create_container_response = docker
         .create_container(
             Some(CreateContainerOptions {
@@ -107,18 +108,55 @@ async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
         )
         .await?;
     println!("✅ Container started: {container_name}");
+    print_log_message(cmd);
+    print_stop_message(cmd);
+    Ok(())
+}
+
+fn print_stop_message(cmd: &Cmd) {
     let stop_message = format!(
-        "ℹ️  To stop this container run: stellar network container stop {network} {additional_flags}",
-        network = &cmd.network,
+        "ℹ️  To stop this container run: stellar network container stop {arg} {additional_flags}",
+        arg = if cmd.container_args.container_name.is_some() {
+            format!(
+                "--container-name {}",
+                cmd.container_args.container_name.clone().unwrap()
+            )
+        } else {
+            cmd.network.to_string()
+        },
         additional_flags = if cmd.container_args.docker_host.is_some() {
-            format!("--docker-host {}", cmd.container_args.docker_host.as_ref().unwrap())
+            format!(
+                "--docker-host {}",
+                cmd.container_args.docker_host.as_ref().unwrap()
+            )
         } else {
             String::new()
         }
     );
-
     println!("{stop_message}");
-    Ok(())
+}
+
+fn print_log_message(cmd: &Cmd) {
+    let log_message = format!(
+        "ℹ️  To see the logs for this container run: stellar network container logs {arg} {additional_flags}",
+        arg = if cmd.container_args.container_name.is_some() {
+            format!(
+                "--container-name {}",
+                cmd.container_args.container_name.clone().unwrap()
+            )
+        } else {
+            cmd.network.to_string()
+        },
+        additional_flags = if cmd.container_args.docker_host.is_some() {
+            format!(
+                "--docker-host {}",
+                cmd.container_args.docker_host.as_ref().unwrap()
+            )
+        } else {
+            String::new()
+        }
+    );
+    println!("{log_message}");
 }
 
 fn get_container_args(cmd: &Cmd) -> Vec<String> {

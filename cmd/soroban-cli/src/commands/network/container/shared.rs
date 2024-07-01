@@ -42,7 +42,7 @@ pub struct ContainerArgs {
     pub docker_host: Option<String>,
 }
 
-#[derive(ValueEnum, Debug, Clone, PartialEq)]
+#[derive(ValueEnum, Debug, Copy, Clone, PartialEq)]
 pub enum Network {
     Local,
     Testnet,
@@ -157,5 +157,13 @@ async fn check_docker_connection(docker: &Docker) -> Result<(), bollard::errors:
             );
             Err(err)
         }
+    }
+}
+
+pub fn get_container_name(container_name_arg: Option<String>, network: Option<Network>) -> String {
+    if let Some(container_name) = container_name_arg {
+        container_name.to_string()
+    } else {
+        format!("stellar-{}", network.unwrap())
     }
 }
