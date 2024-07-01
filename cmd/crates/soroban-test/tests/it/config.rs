@@ -154,6 +154,36 @@ fn read_key() {
 }
 
 #[test]
+fn cannot_generate_ledger_key() {
+    let sandbox = TestEnv::default();
+    sandbox
+        .new_assert_cmd("keys")
+        .arg("generate")
+        .arg("ledger")
+        .assert()
+        .stdout("")
+        .stderr("error: Cannot name a Key ledger\n")
+        .failure();
+}
+
+#[test]
+fn cannot_add_ledger_key() {
+    let sandbox = TestEnv::default();
+    sandbox
+        .new_assert_cmd("keys")
+        .env(
+            "SOROBAN_SECRET_KEY",
+            "SDIY6AQQ75WMD4W46EYB7O6UYMHOCGQHLAQGQTKHDX4J2DYQCHVCQYFD",
+        )
+        .arg("add")
+        .arg("ledger")
+        .assert()
+        .stdout("")
+        .stderr("error: Cannot name a Key ledger\n")
+        .failure();
+}
+
+#[test]
 fn generate_key() {
     let sandbox = TestEnv::default();
     sandbox

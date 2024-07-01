@@ -9,7 +9,13 @@ use super::util::invoke_with_roundtrip;
 
 fn invoke_custom(e: &TestEnv, id: &str, func: &str) -> assert_cmd::Command {
     let mut s = e.new_assert_cmd("contract");
-    s.arg("invoke").arg("--id").arg(id).arg("--").arg(func);
+    s.env("RUST_LOG", "soroban_cli::log::diagnostic_event=off")
+        .arg("invoke")
+        .arg("--id")
+        .arg(id)
+        .arg("--is-view")
+        .arg("--")
+        .arg(func);
     s
 }
 

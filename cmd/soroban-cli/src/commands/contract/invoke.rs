@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::{fmt::Debug, fs, io};
 
 use clap::{arg, command, value_parser, Parser};
-use ed25519_dalek::SigningKey;
+
 use heck::ToKebabCase;
 
 use soroban_env_host::{
@@ -21,15 +21,18 @@ use soroban_env_host::{
     HostError,
 };
 
+use soroban_sdk::xdr::ScSpecFunctionInputV0;
 use soroban_spec::read::FromWasmError;
 
 use super::super::{
     config::{self, locator},
     events,
 };
+use crate::commands::config::secret::StellarSigner;
 use crate::commands::txn_result::{TxnEnvelopeResult, TxnResult};
 use crate::commands::NetworkRunnable;
 use crate::get_spec::{self, get_remote_contract_spec};
+use crate::signer::{self, Stellar};
 use crate::{
     commands::{config::data, global, network},
     rpc, Pwd,
@@ -146,6 +149,8 @@ pub enum Error {
     Network(#[from] network::Error),
     #[error(transparent)]
     GetSpecError(#[from] get_spec::Error),
+    #[error(transparent)]
+    Signer(#[from] signer::Error),
 }
 
 impl From<Infallible> for Error {
@@ -163,12 +168,12 @@ impl Cmd {
             std::env::var("SYSTEM_TEST_VERBOSE_OUTPUT").as_deref() == Ok("true")
     }
 
-    fn build_host_function_parameters(
+    async fn build_host_function_parameters(
         &self,
         contract_id: [u8; 32],
         spec_entries: &[ScSpecEntry],
         config: &config::Args,
-    ) -> Result<(String, Spec, InvokeContractArgs, Vec<SigningKey>), Error> {
+    ) -> Result<(String, Spec, InvokeContractArgs, Vec<StellarSigner>), Error> {
         let spec = Spec(Some(spec_entries.to_vec()));
         let mut cmd = clap::Command::new(self.contract_id.clone())
             .no_binary_name(true)
@@ -188,59 +193,15 @@ impl Cmd {
 
         let func = spec.find_function(function)?;
         // create parsed_args in same order as the inputs to func
-        let mut signers: Vec<SigningKey> = vec![];
-        let parsed_args = func
-            .inputs
-            .iter()
-            .map(|i| {
-                let name = i.name.to_utf8_string()?;
-                if let Some(mut val) = matches_.get_raw(&name) {
-                    let mut s = val.next().unwrap().to_string_lossy().to_string();
-                    if matches!(i.type_, ScSpecTypeDef::Address) {
-                        let cmd = crate::commands::keys::address::Cmd {
-                            name: s.clone(),
-                            hd_path: Some(0),
-                            locator: config.locator.clone(),
-                        };
-                        if let Ok(address) = cmd.public_key() {
-                            s = address.to_string();
-                        }
-                        if let Ok(key) = cmd.private_key() {
-                            signers.push(key);
-                        }
-                    }
-                    spec.from_string(&s, &i.type_)
-                        .map_err(|error| Error::CannotParseArg { arg: name, error })
-                } else if matches!(i.type_, ScSpecTypeDef::Option(_)) {
-                    Ok(ScVal::Void)
-                } else if let Some(arg_path) =
-                    matches_.get_one::<PathBuf>(&fmt_arg_file_name(&name))
-                {
-                    if matches!(i.type_, ScSpecTypeDef::Bytes | ScSpecTypeDef::BytesN(_)) {
-                        Ok(ScVal::try_from(
-                            &std::fs::read(arg_path)
-                                .map_err(|_| Error::MissingFileArg(arg_path.clone()))?,
-                        )
-                        .map_err(|()| Error::CannotParseArg {
-                            arg: name.clone(),
-                            error: soroban_spec_tools::Error::Unknown,
-                        })?)
-                    } else {
-                        let file_contents = std::fs::read_to_string(arg_path)
-                            .map_err(|_| Error::MissingFileArg(arg_path.clone()))?;
-                        tracing::debug!(
-                            "file {arg_path:?}, has contents:\n{file_contents}\nAnd type {:#?}\n{}",
-                            i.type_,
-                            file_contents.len()
-                        );
-                        spec.from_string(&file_contents, &i.type_)
-                            .map_err(|error| Error::CannotParseArg { arg: name, error })
-                    }
-                } else {
-                    Err(Error::MissingArgument(name))
-                }
-            })
-            .collect::<Result<Vec<_>, Error>>()?;
+        let mut signers: Vec<StellarSigner> = vec![];
+        let mut parsed_args: Vec<ScVal> = Vec::new();
+        for i in func.inputs.iter() {
+            let (val, signer) = self.parse_arg(i, matches_, config, &spec).await?;
+            parsed_args.push(val);
+            if let Some(signer) = signer {
+                signers.push(signer);
+            }
+        }
 
         let contract_address_arg = ScAddress::Contract(Hash(contract_id));
         let function_symbol_arg = function
@@ -263,6 +224,58 @@ impl Cmd {
         };
 
         Ok((function.clone(), spec, invoke_args, signers))
+    }
+
+    pub async fn parse_arg(
+        &self,
+        input: &ScSpecFunctionInputV0,
+        matches_: &clap::ArgMatches,
+        config: &config::Args,
+        spec: &Spec,
+    ) -> Result<(ScVal, Option<StellarSigner>), Error> {
+        let mut signer: Option<StellarSigner> = None;
+        let name = input.name.to_utf8_string()?;
+        let sc_val = if let Some(mut val) = matches_.get_raw(&name) {
+            let mut s = val.next().unwrap().to_string_lossy().to_string();
+            if matches!(input.type_, ScSpecTypeDef::Address) {
+                if let Ok(signer_) = config
+                    .locator
+                    .account(&s)
+                    .and_then(|signer| Ok(signer.signer(config.hd_path, config.check)?))
+                {
+                    s = signer_.get_public_key().await?.to_string();
+                    signer = Some(signer_);
+                }
+            }
+            spec.from_string(&s, &input.type_)
+                .map_err(|error| Error::CannotParseArg { arg: name, error })?
+        } else if matches!(input.type_, ScSpecTypeDef::Option(_)) {
+            ScVal::Void
+        } else if let Some(arg_path) = matches_.get_one::<PathBuf>(&fmt_arg_file_name(&name)) {
+            if matches!(input.type_, ScSpecTypeDef::Bytes | ScSpecTypeDef::BytesN(_)) {
+                ScVal::try_from(
+                    &std::fs::read(arg_path)
+                        .map_err(|_| Error::MissingFileArg(arg_path.clone()))?,
+                )
+                .map_err(|()| Error::CannotParseArg {
+                    arg: name.clone(),
+                    error: soroban_spec_tools::Error::Unknown,
+                })?
+            } else {
+                let file_contents = std::fs::read_to_string(arg_path)
+                    .map_err(|_| Error::MissingFileArg(arg_path.clone()))?;
+                tracing::debug!(
+                    "file {arg_path:?}, has contents:\n{file_contents}\nAnd type {:#?}\n{}",
+                    input.type_,
+                    file_contents.len()
+                );
+                spec.from_string(&file_contents, &input.type_)
+                    .map_err(|error| Error::CannotParseArg { arg: name, error })?
+            }
+        } else {
+            return Err(Error::MissingArgument(name));
+        };
+        Ok((sc_val, signer))
     }
 
     pub async fn run(&self, global_args: &global::Args) -> Result<(), Error> {
@@ -318,7 +331,9 @@ impl NetworkRunnable for Cmd {
         let spec_entries = self.spec_entries()?;
         if let Some(spec_entries) = &spec_entries {
             // For testing wasm arg parsing
-            let _ = self.build_host_function_parameters(contract_id, spec_entries, config)?;
+            let _ = self
+                .build_host_function_parameters(contract_id, spec_entries, config)
+                .await?;
         }
         let client = rpc::Client::new(&network.rpc_url)?;
         let account_details = if self.is_view {
@@ -327,12 +342,10 @@ impl NetworkRunnable for Cmd {
             client
                 .verify_network_passphrase(Some(&network.network_passphrase))
                 .await?;
-            let key = config.key_pair()?;
+            let key = config.public_key().await?;
 
             // Get the account sequence number
-            let public_strkey =
-                stellar_strkey::ed25519::PublicKey(key.verifying_key().to_bytes()).to_string();
-            client.get_account(&public_strkey).await?
+            client.get_account(&key.to_string()).await?
         };
         let sequence: i64 = account_details.seq_num.into();
         let AccountId(PublicKey::PublicKeyTypeEd25519(account_id)) = account_details.account_id;
@@ -348,8 +361,9 @@ impl NetworkRunnable for Cmd {
         .map_err(Error::from)?;
 
         // Get the ledger footprint
-        let (function, spec, host_function_params, signers) =
-            self.build_host_function_parameters(contract_id, &spec_entries, config)?;
+        let (function, spec, host_function_params, signers) = self
+            .build_host_function_parameters(contract_id, &spec_entries, config)
+            .await?;
         let tx = build_invoke_contract_tx(
             host_function_params.clone(),
             sequence + 1,
@@ -377,13 +391,14 @@ impl NetworkRunnable for Cmd {
             let mut txn = txn.transaction().clone();
             // let auth = auth_entries(&txn);
             // crate::log::auth(&[auth]);
-
-            if let Some(tx) = config.sign_soroban_authorizations(&txn, &signers).await? {
-                txn = tx;
+            for signer in &signers {
+                if let Some(tx) = config.sign_soroban_authorizations(signer, &txn).await? {
+                    txn = tx;
+                }
             }
             // log_auth_cost_and_footprint(resources(&txn));
             let res = client
-                .send_transaction_polling(&config.sign_with_local_key(txn).await?)
+                .send_transaction_polling(&config.sign(txn).await?)
                 .await?;
             if !no_cache {
                 data::write(res.clone().try_into()?, &network.rpc_uri()?)?;

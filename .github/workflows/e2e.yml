@@ -84,6 +84,9 @@ jobs:
           path: system-test/js-stellar-sdk
 
       - uses: stellar/actions/rust-cache@main
+      - name: install libudev-dev
+        run: |
+          sudo apt install -y libudev-dev
       - name: Build system test with component versions
         run: |
           cd $GITHUB_WORKSPACE/system-test

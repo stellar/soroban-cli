@@ -13,7 +13,7 @@ use stellar_strkey::{Contract, DecodeError};
 
 use crate::{utils::find_config_dir, Pwd};
 
-use super::{alias, network::Network, secret::Secret};
+use super::{alias, network::Network, secret::SignerKind};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -65,6 +65,10 @@ pub enum Error {
     CannotAccessConfigDir,
     #[error("cannot parse contract ID {0}: {1}")]
     CannotParseContractId(String, DecodeError),
+    #[error("Incorrect Key name")]
+    IncorrectKeyName,
+    #[error("Cannot name a Key ledger")]
+    LedgerKeyName,
 }
 
 #[derive(Debug, clap::Args, Default, Clone)]
@@ -95,6 +99,47 @@ impl Display for Location {
             },
             self.as_ref().parent().unwrap().parent().unwrap()
         )
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct NewKeyName(KeyName);
+
+impl std::ops::Deref for NewKeyName {
+    type Target = KeyName;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl FromStr for NewKeyName {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "ledger" {
+            return Err(Error::LedgerKeyName);
+        }
+        Ok(NewKeyName(s.parse()?))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct KeyName(String);
+
+impl std::ops::Deref for KeyName {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl FromStr for KeyName {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(KeyName(s.to_string()))
     }
 }
 
@@ -144,7 +189,7 @@ impl Args {
         )
     }
 
-    pub fn write_identity(&self, name: &str, secret: &Secret) -> Result<(), Error> {
+    pub fn write_identity(&self, name: &KeyName, secret: &SignerKind) -> Result<(), Error> {
         KeyType::Identity.write(name, secret, &self.config_dir()?)
     }
 
@@ -197,8 +242,17 @@ impl Args {
             })
             .collect::<Vec<_>>())
     }
-    pub fn read_identity(&self, name: &str) -> Result<Secret, Error> {
+
+    pub fn read_identity(&self, name: &KeyName) -> Result<SignerKind, Error> {
         KeyType::Identity.read_with_global(name, &self.local_config()?)
+    }
+
+    pub fn account(&self, account_str: &str) -> Result<SignerKind, Error> {
+        if let Ok(signer) = account_str.parse::<SignerKind>() {
+            Ok(signer)
+        } else {
+            self.read_identity(&account_str.parse()?)
+        }
     }
 
     pub fn read_network(&self, name: &str) -> Result<Network, Error> {
@@ -213,7 +267,7 @@ impl Args {
         res
     }
 
-    pub fn remove_identity(&self, name: &str) -> Result<(), Error> {
+    pub fn remove_identity(&self, name: &KeyName) -> Result<(), Error> {
         KeyType::Identity.remove(name, &self.config_dir()?)
     }
 

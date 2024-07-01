@@ -1,17 +1,15 @@
 use std::path::PathBuf;
 
 use clap::{arg, command};
+use secret::StellarSigner;
 use serde::{Deserialize, Serialize};
+use stellar_strkey::ed25519::PublicKey;
 
-use soroban_rpc::Client;
+use crate::signer;
+use crate::xdr::{Transaction, TransactionEnvelope};
+use crate::{signer::Stellar, Pwd};
 
-use crate::{
-    signer,
-    xdr::{Transaction, TransactionEnvelope},
-    Pwd,
-};
-
-use self::{network::Network, secret::Secret};
+use self::network::Network;
 
 use super::{keys, network};
 
@@ -52,52 +50,54 @@ pub struct Args {
 
     #[command(flatten)]
     pub locator: locator::Args,
+
+    /// Check with user before signature. Eventually this will be replaced with `--yes`, which does the opposite and will force a check without --yes
+    #[arg(long)]
+    pub check: bool,
 }
 
 impl Args {
+    pub fn signer(&self) -> Result<StellarSigner, Error> {
+        Ok(self
+            .locator
+            .account(&self.source_account)?
+            .signer(self.hd_path, self.check)?)
+    }
+
     pub fn key_pair(&self) -> Result<ed25519_dalek::SigningKey, Error> {
-        let key = self.account(&self.source_account)?;
+        let key = self.locator.account(&self.source_account)?;
         Ok(key.key_pair(self.hd_path)?)
     }
 
-    pub async fn sign_with_local_key(&self, tx: Transaction) -> Result<TransactionEnvelope, Error> {
-        self.sign(tx).await
+    pub async fn public_key(&self) -> Result<PublicKey, Error> {
+        Ok(self.signer()?.get_public_key().await?)
     }
 
-    #[allow(clippy::unused_async)]
     pub async fn sign(&self, tx: Transaction) -> Result<TransactionEnvelope, Error> {
-        let key = self.key_pair()?;
+        let signer = self.signer()?;
+        self.sign_with_signer(&signer, tx).await
+    }
+
+    pub async fn sign_with_signer(
+        &self,
+        signer: &(impl Stellar + std::marker::Sync),
+        tx: Transaction,
+    ) -> Result<TransactionEnvelope, Error> {
         let Network {
             network_passphrase, ..
         } = &self.get_network()?;
-        Ok(signer::sign_tx(&key, &tx, network_passphrase)?)
+        Ok(signer.sign_txn(tx, network_passphrase).await?)
     }
 
     pub async fn sign_soroban_authorizations(
         &self,
+        signer: &(impl Stellar + std::marker::Sync),
         tx: &Transaction,
-        signers: &[ed25519_dalek::SigningKey],
     ) -> Result<Option<Transaction>, Error> {
         let network = self.get_network()?;
-        let source_key = self.key_pair()?;
-        let client = Client::new(&network.rpc_url)?;
-        let latest_ledger = client.get_latest_ledger().await?.sequence;
-        let seq_num = latest_ledger + 60; // ~ 5 min
-        Ok(signer::sign_soroban_authorizations(
-            tx,
-            &source_key,
-            signers,
-            seq_num,
-            &network.network_passphrase,
-        )?)
-    }
-
-    pub fn account(&self, account_str: &str) -> Result<Secret, Error> {
-        if let Ok(secret) = self.locator.read_identity(account_str) {
-            Ok(secret)
-        } else {
-            Ok(account_str.parse::<Secret>()?)
-        }
+        Ok(signer
+            .sign_soroban_authorizations(tx, &network.network_passphrase)
+            .await?)
     }
 
     pub fn get_network(&self) -> Result<Network, Error> {
