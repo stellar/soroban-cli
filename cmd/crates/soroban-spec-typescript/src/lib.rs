@@ -74,7 +74,7 @@ fn generate_class(fns: &[Entry], spec: &[ScSpecEntry]) -> String {
         r#"export interface Client {{{method_types}
 }}
 export class Client extends ContractClient {{
-  constructor(public readonly options: ContractClientOptions) {{
+  constructor(options: ContractClientOptions) {{
     super(
       new ContractSpec([ {spec} ]),
       options
