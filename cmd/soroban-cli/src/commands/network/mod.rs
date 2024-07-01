@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use clap::{arg, Parser};
+use phf::phf_map;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use stellar_strkey::ed25519::PublicKey;
@@ -247,11 +248,31 @@ impl Network {
     }
 }
 
-impl Network {
-    pub fn futurenet() -> Self {
-        Network {
-            rpc_url: "https://rpc-futurenet.stellar.org:443".to_owned(),
-            network_passphrase: "Test SDF Future Network ; October 2022".to_owned(),
+pub static DEFAULTS: phf::Map<&'static str, (&'static str, &'static str)> = phf_map! {
+    "local" => (
+        "http://localhost:8000/rpc",
+        "Standalone Network ; February 2017",
+    ),
+    "futurenet" => (
+        "https://soroban-testnet.stellar.org",
+        "Test SDF Network ; September 2015",
+    ),
+    "testnet" => (
+        "https://rpc-futurenet.stellar.org:443",
+        "Test SDF Future Network ; October 2022",
+    ),
+    "mainnet" => (
+        "Bring Your Own: https://developers.stellar.org/docs/data/rpc/rpc-providers",
+        "Public Global Stellar Network ; September 2015",
+    ),
+};
+
+impl From<&(&str, &str)> for Network {
+    /// Convert the return value of `DEFAULTS.get()` into a Network
+    fn from(n: &(&str, &str)) -> Self {
+        Self {
+            rpc_url: n.0.to_string(),
+            network_passphrase: n.1.to_string(),
         }
     }
 }

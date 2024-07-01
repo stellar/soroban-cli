@@ -125,11 +125,12 @@ impl NetworkRunnable for Cmd {
             rpc_url,
             network_passphrase,
             ..
-        } = self
-            .network
-            .get(&self.locator)
-            .ok()
-            .unwrap_or_else(Network::futurenet);
+        } = self.network.get(&self.locator).ok().unwrap_or_else(|| {
+            network::DEFAULTS
+                .get("futurenet")
+                .expect("why did we remove the default futurenet network?")
+                .into()
+        });
         let absolute_path = self.output_dir.canonicalize()?;
         let file_name = absolute_path
             .file_name()
