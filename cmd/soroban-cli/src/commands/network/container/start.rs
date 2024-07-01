@@ -106,7 +106,7 @@ async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
         .await?;
     println!("✅ Container started: {container_name}");
     let stop_message = format!(
-        "ℹ️  To stop this container run: stellar network stop {network} {additional_flags}",
+        "ℹ️  To stop this container run: stellar network container stop {network} {additional_flags}",
         network = &cmd.network,
         additional_flags = if cmd.docker_host.is_some() {
             format!("--docker-host {}", cmd.docker_host.as_ref().unwrap())
