@@ -8,8 +8,10 @@ use bollard::{
 use futures_util::TryStreamExt;
 
 use crate::commands::network::container::shared::{
-    connect_to_docker, Error as ConnectionError, Network, DOCKER_HOST_HELP,
+    connect_to_docker, get_container_name, Error as ConnectionError, Network,
 };
+
+use super::shared::ContainerArgs;
 
 const DEFAULT_PORT_MAPPING: &str = "8000:8000";
 const DOCKER_IMAGE: &str = "docker.io/stellar/quickstart";
@@ -25,11 +27,11 @@ pub enum Error {
 
 #[derive(Debug, clap::Parser, Clone)]
 pub struct Cmd {
+    #[command(flatten)]
+    pub container_args: ContainerArgs,
+
     /// Network to start
     pub network: Network,
-
-    #[arg(short = 'd', long, help = DOCKER_HOST_HELP, env = "DOCKER_HOST")]
-    pub docker_host: Option<String>,
 
     /// Optional argument to specify the limits for the local network only
     #[arg(short = 'l', long)]
@@ -56,7 +58,7 @@ impl Cmd {
 }
 
 async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
-    let docker = connect_to_docker(&cmd.docker_host).await?;
+    let docker = connect_to_docker(&cmd.container_args.docker_host).await?;
 
     let image = get_image_name(cmd);
     docker
@@ -87,7 +89,8 @@ async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
         ..Default::default()
     };
 
-    let container_name = format!("stellar-{}", cmd.network);
+    let container_name =
+        get_container_name(cmd.container_args.container_name.clone(), Some(cmd.network));
     let create_container_response = docker
         .create_container(
             Some(CreateContainerOptions {
@@ -104,19 +107,57 @@ async fn run_docker_command(cmd: &Cmd) -> Result<(), Error> {
             None::<StartContainerOptions<String>>,
         )
         .await?;
-    println!("✅ Container started: {container_name}");
-    let stop_message = format!(
-        "ℹ️  To stop this container run: stellar network stop {network} {additional_flags}",
-        network = &cmd.network,
-        additional_flags = if cmd.docker_host.is_some() {
-            format!("--docker-host {}", cmd.docker_host.as_ref().unwrap())
-        } else {
-            String::new()
-        }
+
+    let logs_stream = &mut docker.logs(
+        &create_container_response.id,
+        Some(bollard::container::LogsOptions {
+            follow: true,
+            stdout: true,
+            stderr: true,
+            tail: "all",
+            ..Default::default()
+        }),
     );
 
-    println!("{stop_message}");
+    for _ in 0..25 {
+        if let Some(log) = logs_stream.try_next().await? {
+            print!("    {log}");
+        }
+    }
+    println!("✅ Container started: {container_name}");
+    print_log_message(cmd);
+    print_stop_message(cmd);
     Ok(())
+}
+
+fn print_log_message(cmd: &Cmd) {
+    let log_message = format!(
+        "ℹ️ To see the logs for this container run: stellar network container logs {arg} {additional_flags}",
+        arg = cmd.container_args.container_name.as_ref().map_or_else(
+            || cmd.network.to_string(),
+            |container_name| format!("--container-name {}", container_name)
+        ),
+        additional_flags = cmd.container_args.docker_host.as_ref().map_or_else(
+            || String::new(),
+            |docker_host| format!("--docker-host {}", docker_host)
+        )
+    );
+    println!("{log_message}");
+}
+
+fn print_stop_message(cmd: &Cmd) {
+    let stop_message = format!(
+        "ℹ️ To stop this container run: stellar network container stop {arg} {additional_flags}",
+        arg = cmd.container_args.container_name.as_ref().map_or_else(
+            || cmd.network.to_string(),
+            |container_name| format!("--container-name {}", container_name)
+        ),
+        additional_flags = cmd.container_args.docker_host.as_ref().map_or_else(
+            || String::new(),
+            |docker_host| format!("--docker-host {}", docker_host)
+        )
+    );
+    println!("{stop_message}");
 }
 
 fn get_container_args(cmd: &Cmd) -> Vec<String> {

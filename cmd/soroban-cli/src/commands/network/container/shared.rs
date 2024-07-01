@@ -31,7 +31,18 @@ pub enum Error {
     UnsupportedURISchemeError { uri: String },
 }
 
-#[derive(ValueEnum, Debug, Clone, PartialEq)]
+#[derive(Debug, clap::Parser, Clone)]
+pub struct ContainerArgs {
+    /// Optional argument to specify the container name
+    #[arg(short = 'c', long, required_unless_present = "network")]
+    pub container_name: Option<String>,
+
+    /// Optional argument to override the default docker host. This is useful when you are using a non-standard docker host path for your Docker-compatible container runtime, e.g. Docker Desktop defaults to $HOME/.docker/run/docker.sock instead of /var/run/docker.sock
+    #[arg(short = 'd', long, help = DOCKER_HOST_HELP, env = "DOCKER_HOST")]
+    pub docker_host: Option<String>,
+}
+
+#[derive(ValueEnum, Debug, Copy, Clone, PartialEq)]
 pub enum Network {
     Local,
     Testnet,
@@ -146,5 +157,13 @@ async fn check_docker_connection(docker: &Docker) -> Result<(), bollard::errors:
             );
             Err(err)
         }
+    }
+}
+
+pub fn get_container_name(container_name_arg: Option<String>, network: Option<Network>) -> String {
+    if let Some(container_name) = container_name_arg {
+        container_name.to_string()
+    } else {
+        format!("stellar-{}", network.unwrap())
     }
 }
