@@ -1,4 +1,4 @@
-pub fn diagnostic_events(events: &[impl std::fmt::Debug], level: tracing::Level) {
+pub fn contract_events(events: &[impl std::fmt::Debug], level: tracing::Level) {
     for (i, event) in events.iter().enumerate() {
         match level {
             tracing::Level::TRACE => {

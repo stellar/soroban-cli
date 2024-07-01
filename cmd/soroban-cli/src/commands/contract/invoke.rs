@@ -388,10 +388,14 @@ impl NetworkRunnable for Cmd {
             if !no_cache {
                 data::write(res.clone().try_into()?, &network.rpc_uri()?)?;
             }
-            (res.return_value()?, res.contract_events()?)
+            let events = res
+                .result_meta
+                .as_ref()
+                .map(crate::log::extract_events)
+                .unwrap_or_default();
+            (res.return_value()?, events)
         };
-
-        crate::log::diagnostic_events(&events, tracing::Level::INFO);
+        crate::log::events(&events);
         output_to_string(&spec, &return_value, &function)
     }
 }
